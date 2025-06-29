@@ -82,7 +82,12 @@ export class WordAnalyzer {
   validateInflection(entry, inflection) {
     // Validate that the inflection matches the dictionary entry's paradigm
     if (inflection.qual.pofs === PartOfSpeech.N && entry.part.pofs === PartOfSpeech.N) {
-      return entry.part.n.decl === inflection.qual.n.decl;
+      // For nouns, check both declension and variant
+      const declMatch = entry.part.n.decl === inflection.qual.n.decl;
+      // If inflection has gender specified, check it matches
+      const genderMatch = inflection.qual.n.gender === 'X' || 
+                         entry.part.n.gender === inflection.qual.n.gender;
+      return declMatch && genderMatch;
     } else if (inflection.qual.pofs === PartOfSpeech.V && entry.part.pofs === PartOfSpeech.V) {
       return entry.part.v.con === inflection.qual.v.con;
     } else if (inflection.qual.pofs === PartOfSpeech.ADJ && entry.part.pofs === PartOfSpeech.ADJ) {
@@ -136,47 +141,138 @@ export class WordAnalyzer {
     return results;
   }
 
-  formatOutput(parseRecord) {
+  formatInflectionLine(parseRecord) {
     let output = '';
     
-    // Format the word form
+    // Format: stem.ending    PART    decl/conj info    inflection details
     const stems = parseRecord.stem;
-    output += `${stems.stem1.trim()}`;
-    if (stems.stem2.trim()) output += `.${stems.stem2.trim()}`;
-    if (stems.stem3.trim()) output += `.${stems.stem3.trim()}`;
-    if (stems.stem4.trim()) output += `.${stems.stem4.trim()}`;
+    const inflection = parseRecord.inflection;
+    
+    // Show the stem with the ending separated by period
+    if (inflection && inflection.ending) {
+      output += `${stems.stem1.trim()}.${inflection.ending}`;
+    } else {
+      output += stems.stem1.trim();
+    }
+    
+    // Pad to column 21
+    output = output.padEnd(21, ' ');
     
     // Add part of speech
-    output += `     ${parseRecord.dictEntry.part.pofs}`;
+    output += parseRecord.dictEntry.part.pofs.padEnd(7, ' ');
     
     // Add declension/conjugation info
     if (parseRecord.dictEntry.part.pofs === PartOfSpeech.N) {
-      output += ` ${parseRecord.dictEntry.part.n.decl} ${parseRecord.dictEntry.part.n.gender}`;
+      output += `${parseRecord.dictEntry.part.n.decl} ${parseRecord.dictEntry.part.n.var || 1} `;
     } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.V) {
-      output += ` ${parseRecord.dictEntry.part.v.con}`;
+      output += `${parseRecord.dictEntry.part.v.con} ${parseRecord.dictEntry.part.v.var || 1} `;
     } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.ADJ) {
-      output += ` ${parseRecord.dictEntry.part.adj.decl}`;
+      output += `${parseRecord.dictEntry.part.adj.decl} ${parseRecord.dictEntry.part.adj.var || 1} `;
     }
     
-    // Add inflection info
-    if (parseRecord.inflection && parseRecord.inflection.qual) {
-      output += '     ';
-      
-      if (parseRecord.inflection.qual.pofs === PartOfSpeech.N) {
-        const n = parseRecord.inflection.qual.n;
-        output += `${n.cs} ${n.number} ${n.gender}`;
-      } else if (parseRecord.inflection.qual.pofs === PartOfSpeech.V) {
-        const v = parseRecord.inflection.qual.v;
-        output += `${v.tense} ${v.voice} ${v.mood} ${v.person} ${v.number}`;
-      } else if (parseRecord.inflection.qual.pofs === PartOfSpeech.ADJ) {
-        const adj = parseRecord.inflection.qual.adj;
-        output += `${adj.cs} ${adj.number} ${adj.gender} ${adj.comp}`;
+    // Add inflection details
+    if (inflection && inflection.qual) {
+      if (inflection.qual.pofs === PartOfSpeech.N) {
+        const n = inflection.qual.n;
+        output += `${n.cs} ${n.number} ${n.gender}`.padEnd(25, ' ');
+      } else if (inflection.qual.pofs === PartOfSpeech.V) {
+        const v = inflection.qual.v;
+        output += `${v.tense} ${v.voice} ${v.mood} ${v.person} ${v.number}`.padEnd(25, ' ');
+      } else if (inflection.qual.pofs === PartOfSpeech.ADJ) {
+        const adj = inflection.qual.adj;
+        output += `${adj.cs} ${adj.number} ${adj.gender} ${adj.comp}`.padEnd(25, ' ');
       }
     }
     
-    // Add meaning
-    output += `\n${parseRecord.dictEntry.mean}\n`;
+    return output;
+  }
+
+  formatOutput(parseRecord) {
+    let output = '';
+    
+    // Line 1: Form analysis
+    output += this.formatInflectionLine(parseRecord) + '\n';
+    
+    // Line 2: Dictionary form
+    output += this.formatDictionaryForm(parseRecord) + '\n';
+    
+    // Line 3: Meaning
+    output += parseRecord.dictEntry.mean;
     
     return output;
+  }
+
+  formatDictionaryForm(parseRecord) {
+    const entry = parseRecord.dictEntry;
+    const stems = entry.stems;
+    let output = '';
+    
+    if (entry.part.pofs === PartOfSpeech.V) {
+      // Verb: show principal parts (amo, amare, amavi, amatus)
+      output += `${stems.stem1.trim()}o, ${stems.stem1.trim()}are`;
+      if (stems.stem3.trim()) {
+        output += `, ${stems.stem3.trim()}i`;
+      }
+      if (stems.stem4.trim()) {
+        output += `, ${stems.stem4.trim()}us`;
+      }
+      output += `  V`;
+      if (entry.part.v.con) {
+        const conj = ['', '1st', '2nd', '3rd', '3rd', '4th'][entry.part.v.con] || '';
+        output += ` (${conj})`;
+      }
+    } else if (entry.part.pofs === PartOfSpeech.N) {
+      // Noun: show nom and gen forms
+      if (entry.part.n.decl === 2 && entry.part.n.var === 2) {
+        // 2nd declension neuter
+        output += `${stems.stem1.trim()}um, ${stems.stem1.trim()}i`;
+      } else if (entry.part.n.decl === 2 && entry.part.n.var === 1) {
+        // 2nd declension masculine
+        output += `${stems.stem1.trim()}us, ${stems.stem1.trim()}i`;
+      } else {
+        // Other declensions
+        output += `${stems.stem1.trim()}, `;
+        if (stems.stem2.trim()) {
+          output += `${stems.stem2.trim()}`;
+          // Add genitive ending
+          if (entry.part.n.decl === 1) output += 'ae';
+          else if (entry.part.n.decl === 2) output += 'i';
+          else if (entry.part.n.decl === 3) output += 'is';
+          else if (entry.part.n.decl === 4) output += 'us';
+          else if (entry.part.n.decl === 5) output += 'ei';
+        }
+      }
+      output += `  N (${entry.part.n.decl || ''}${this.getOrdinal(entry.part.n.decl)})`;
+      output += ` ${entry.part.n.gender || ''}`;
+    } else if (entry.part.pofs === PartOfSpeech.ADJ) {
+      // Adjective: show forms with comparative and superlative
+      if (entry.part.adj.decl === 1 || entry.part.adj.decl === 2) {
+        output += `${stems.stem1.trim()}us, ${stems.stem1.trim()}a -um, melior -or -us, optimus -a -um`;
+      } else {
+        output += stems.stem1.trim();
+        if (stems.stem2.trim()) {
+          output += `, ${stems.stem2.trim()}`;
+        }
+      }
+      output += `  ADJ`;
+    } else {
+      // Other parts of speech
+      output += `${stems.stem1.trim()}  ${entry.part.pofs}`;
+    }
+    
+    // Add frequency info [XXXAO]
+    const freq = entry.tran.freq || 'X';
+    const age = entry.tran.age || 'X';
+    const area = entry.tran.area || 'X';
+    const geo = entry.tran.geo || 'X';
+    const source = entry.tran.source || 'X';
+    output += `   [${age}${area}${geo}${freq}${source}]`;
+    
+    return output;
+  }
+
+  getOrdinal(n) {
+    const ordinals = ['', 'st', 'nd', 'rd', 'th', 'th'];
+    return ordinals[n] || 'th';
   }
 }

@@ -1,6 +1,5 @@
 import { PartOfSpeech, DictionaryEntry, StemKey } from './types.js';
 import fs from 'fs';
-import path from 'path';
 
 export class Dictionary {
   constructor() {
@@ -186,14 +185,26 @@ export class Dictionary {
       {
         stems: new StemKey('puell', 'puell'),
         part: { pofs: PartOfSpeech.N, n: { decl: 1, var: 1, gender: 'F' } },
-        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
-        mean: 'girl, (female) child; maiden; young woman; sweetheart'
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'B', source: 'O' },
+        mean: 'girl, (female) child/daughter; maiden; young woman/wife; sweetheart; slavegirl;'
+      },
+      {
+        stems: new StemKey('bon', 'bon'),
+        part: { pofs: PartOfSpeech.N, n: { decl: 2, var: 1, gender: 'M' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'C', source: 'O' },
+        mean: 'good/moral/honest/brave man; man of honor, gentleman; better/rich people (pl.);'
+      },
+      {
+        stems: new StemKey('bon', 'bon'),
+        part: { pofs: PartOfSpeech.N, n: { decl: 2, var: 2, gender: 'N' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
+        mean: 'good, good thing, profit, advantage; goods (pl.), possessions, wealth, estate;'
       },
       {
         stems: new StemKey('bon', 'bon'),
         part: { pofs: PartOfSpeech.ADJ, adj: { decl: 1, var: 1 } },
-        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
-        mean: 'good, honest, brave, noble, kind, pleasant, right, useful; valid; healthy'
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
+        mean: 'good, honest, brave, noble, kind, pleasant, right, useful; valid; healthy;'
       },
       {
         stems: new StemKey('et'),

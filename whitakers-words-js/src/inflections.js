@@ -50,6 +50,9 @@ export class InflectionDatabase {
     this.addNounInflection(2, 'is', Case.DAT, Number.P, Gender.N);
     this.addNounInflection(2, 'is', Case.ABL, Number.P, Gender.N);
 
+    // Additional 2nd declension forms for -um ending (both M and N)
+    this.addNounInflection(2, 'um', Case.ACC, Number.S, Gender.M);
+
     // 3rd declension
     this.addNounInflection(3, '', Case.NOM, Number.S, Gender.X);
     this.addNounInflection(3, '', Case.VOC, Number.S, Gender.X);
@@ -104,6 +107,9 @@ export class InflectionDatabase {
     this.addAdjectiveInflection(1, 'us', Case.NOM, Number.S, Gender.M, Comparison.POS);
     this.addAdjectiveInflection(1, 'a', Case.NOM, Number.S, Gender.F, Comparison.POS);
     this.addAdjectiveInflection(1, 'um', Case.NOM, Number.S, Gender.N, Comparison.POS);
+    this.addAdjectiveInflection(1, 'um', Case.VOC, Number.S, Gender.N, Comparison.POS);
+    this.addAdjectiveInflection(1, 'um', Case.ACC, Number.S, Gender.M, Comparison.POS);
+    this.addAdjectiveInflection(1, 'um', Case.ACC, Number.S, Gender.N, Comparison.POS);
     this.addAdjectiveInflection(1, 'i', Case.GEN, Number.S, Gender.M, Comparison.POS);
     this.addAdjectiveInflection(1, 'ae', Case.GEN, Number.S, Gender.F, Comparison.POS);
     this.addAdjectiveInflection(1, 'i', Case.GEN, Number.S, Gender.N, Comparison.POS);
