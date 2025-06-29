@@ -158,6 +158,54 @@ test('Multiple part of speech analysis - sine', () => {
   assert(prepInflectionLine.includes('PREP'), 'Prep line should contain "PREP"');
 });
 
+test('Multiple meanings with different parts of speech - contra', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('contra');
+  assert(results.length >= 2, 'Should parse "contra" with at least 2 results (adverb, preposition)');
+  
+  // Check for adverb result
+  const advResult = results.find(r => r.dictEntry.part.pofs === 'ADV');
+  assert(advResult, 'Should find adverb result');
+  assert(advResult.dictEntry.mean.includes('facing'), 'Should mean "facing"');
+  assert(advResult.dictEntry.mean.includes('opposite direction'), 'Should include "opposite direction"');
+  assert(advResult.dictEntry.mean.includes('vice versa'), 'Should include "vice versa"');
+  
+  // Check for preposition result
+  const prepResult = results.find(r => r.dictEntry.part.pofs === 'PREP');
+  assert(prepResult, 'Should find preposition result');
+  assert.equal(prepResult.dictEntry.part.prep.obj, 'ACC', 'Should take accusative case');
+  assert(prepResult.dictEntry.mean.includes('against'), 'Should mean "against"');
+  assert(prepResult.dictEntry.mean.includes('detriment'), 'Should include "detriment"');
+  
+  // Test output formatting - both should have consistent padding
+  const advInflectionLine = analyzer.formatInflectionLine(advResult);
+  assert(advInflectionLine.includes('contra'), 'ADV line should contain "contra"');
+  assert(advInflectionLine.includes('ADV'), 'ADV line should contain "ADV"');
+  assert(advInflectionLine.includes('POS'), 'ADV line should show POS');
+  
+  const prepInflectionLine = analyzer.formatInflectionLine(prepResult);
+  assert(prepInflectionLine.includes('contra'), 'PREP line should contain "contra"');
+  assert(prepInflectionLine.includes('PREP'), 'PREP line should contain "PREP"');
+  assert(prepInflectionLine.includes('ACC'), 'PREP line should show ACC');
+  
+  // Test that both lines have similar length/padding
+  const advLineLength = advInflectionLine.length;
+  const prepLineLength = prepInflectionLine.length;
+  assert(Math.abs(advLineLength - prepLineLength) <= 5, 'ADV and PREP lines should have similar padding lengths');
+  
+  // Test dictionary form formatting
+  const advDictForm = analyzer.formatDictionaryForm(advResult);
+  assert(advDictForm.includes('contra  ADV'), 'ADV dictionary form should show "contra  ADV"');
+  assert(advDictForm.includes('[XXXAO]'), 'Should include frequency code');
+  
+  const prepDictForm = analyzer.formatDictionaryForm(prepResult);
+  assert(prepDictForm.includes('contra  PREP  ACC'), 'PREP dictionary form should show "contra  PREP  ACC"');
+  assert(prepDictForm.includes('[XXXAO]'), 'Should include frequency code');
+});
+
 test('Macron handling', () => {
   const dict = Dictionary.createSampleDictionary();
   const inflDb = new InflectionDatabase('../INFLECTS.LAT');

@@ -466,9 +466,9 @@ export class WordAnalyzer {
       } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.ADV) {
         // Check if inflection has comparison degree info
         if (inflection && inflection.qual && inflection.qual.adv && inflection.qual.adv.comp) {
-          output += inflection.qual.adv.comp.padEnd(25, ' ');
+          output += inflection.qual.adv.comp.padEnd(40, ' ');
         } else {
-          output += 'POS'.padEnd(25, ' ');
+          output += 'POS'.padEnd(40, ' ');
         }
       }
     }

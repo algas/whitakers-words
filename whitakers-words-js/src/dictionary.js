@@ -371,6 +371,18 @@ export class Dictionary {
         part: { pofs: PartOfSpeech.PREP, prep: { obj: 'ABL' } },
         tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
         mean: 'without; (sometimes after object); lack; [Johannis sine Terra => John Lackland];'
+      },
+      {
+        stems: new StemKey('contra'),
+        part: { pofs: PartOfSpeech.ADV, adv: {} },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
+        mean: 'facing, face-to-face, in the eyes; towards/up to; across; in opposite direction\nagainst, opposite, opposed/hostile/contrary/in reply to; directly over/level;\notherwise, differently; conversely; on the contrary; vice versa;'
+      },
+      {
+        stems: new StemKey('contra'),
+        part: { pofs: PartOfSpeech.PREP, prep: { obj: 'ACC' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
+        mean: 'against, facing, opposite; weighed against; as against; in resistance/reply to;\ncontrary to, not in conformance with; the reverse of; otherwise than;\ntowards/up to, in direction of;  directly over/level with; to detriment of;'
       }
     ];
     

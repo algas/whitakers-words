@@ -216,7 +216,9 @@ function processWord(word) {
         }
         // Then output dictionary form and meaning once
         console.log(analyzer.formatDictionaryForm(group[0]));
-        console.log(group[0].dictEntry.mean);
+        // Clean up pipe characters from continuation lines in meanings
+        const cleanMeaning = group[0].dictEntry.mean.replace(/\n\|+/g, '\n').replace(/^\|+/, '');
+        console.log(cleanMeaning);
       }
       
       // Note: removed asterisk separator to match expected output format
