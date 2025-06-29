@@ -6,7 +6,7 @@ import { InflectionDatabase } from '../src/inflections.js';
 import { EnglishLookup } from '../src/english-lookup.js';
 
 test('Inflection database loads correctly', () => {
-  const db = new InflectionDatabase();
+  const db = new InflectionDatabase('../INFLECTS.LAT');
   assert(db.inflections.length > 0, 'Should have inflections loaded');
 });
 
@@ -20,7 +20,7 @@ test('Dictionary can find stems', () => {
 
 test('Word analyzer can parse "amat"', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('amat');
@@ -33,7 +33,7 @@ test('Word analyzer can parse "amat"', () => {
 
 test('Word analyzer can parse "puella"', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('puella');
@@ -46,7 +46,7 @@ test('Word analyzer can parse "puella"', () => {
 
 test('Word analyzer can parse "bonum"', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('bonum');
@@ -72,7 +72,7 @@ test('English lookup works', () => {
 
 test('Exact match for conjunctions', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('et');
@@ -85,7 +85,7 @@ test('Exact match for conjunctions', () => {
 
 test('Macron handling', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   // Test that mōrēs is converted to mores
@@ -104,7 +104,7 @@ test('Macron handling', () => {
 
 test('Operational examples - agricolarum', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('agricolarum');
@@ -123,7 +123,7 @@ test('Operational examples - agricolarum', () => {
 
 test('Operational examples - feminae', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('feminae');
@@ -137,7 +137,7 @@ test('Operational examples - feminae', () => {
 
 test('Operational examples - ego', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('ego');
@@ -152,7 +152,7 @@ test('Operational examples - ego', () => {
 
 test('4th declension - cornu', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('cornu');
@@ -174,7 +174,7 @@ test('4th declension - cornu', () => {
 
 test('Demonstrative pronoun - illud', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('illud');
@@ -196,7 +196,7 @@ test('Demonstrative pronoun - illud', () => {
 
 test('3rd declension adjective and adverb - facile', () => {
   const dict = Dictionary.createSampleDictionary();
-  const inflDb = new InflectionDatabase();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('facile');

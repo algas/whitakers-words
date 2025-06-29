@@ -23,25 +23,25 @@ npm install
 ### Interactive Mode
 
 ```bash
-node bin/words.js
+node bin/words.js -I ../INFLECTS.LAT
 ```
 
 ### Analyze Latin Words
 
 ```bash
-node bin/words.js amat puella bonum
+node bin/words.js -I ../INFLECTS.LAT amat puella bonum
 ```
 
 ### English to Latin Lookup
 
 ```bash
-node bin/words.js -e love girl good
+node bin/words.js -I ../INFLECTS.LAT -e love girl good
 ```
 
 ### Process File
 
 ```bash
-node bin/words.js -f latin_text.txt
+node bin/words.js -I ../INFLECTS.LAT -f latin_text.txt
 ```
 
 ### Using Original Data Files
