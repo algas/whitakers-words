@@ -1,0 +1,28 @@
+{
+  "name": "whitakers-words-js",
+  "version": "1.0.0",
+  "description": "JavaScript implementation of Whitaker's Words Latin-English dictionary",
+  "main": "src/index.js",
+  "type": "module",
+  "bin": {
+    "words": "./bin/words.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "words": "node bin/words.js",
+    "makedict": "node bin/makedict.js",
+    "makestem": "node bin/makestem.js",
+    "makeinfl": "node bin/makeinfl.js",
+    "makeewds": "node bin/makeewds.js"
+  },
+  "keywords": ["latin", "dictionary", "linguistics", "whitakers-words"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.0.0",
+    "readline-sync": "^1.4.10"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}
