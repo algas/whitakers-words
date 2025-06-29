@@ -83,6 +83,31 @@ test('Exact match for conjunctions', () => {
   assert(result.dictEntry.mean.includes('and'), 'Should mean "and"');
 });
 
+test('Exact match for prepositions - ab', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('ab');
+  assert(results.length === 1, 'Should parse "ab" with exactly one result');
+  
+  const result = results[0];
+  assert.equal(result.dictEntry.part.pofs, 'PREP', 'Should be a preposition');
+  assert.equal(result.dictEntry.part.prep.obj, 'ABL', 'Should take ablative case');
+  assert(result.dictEntry.mean.includes('by (agent)'), 'Should mean "by (agent)"');
+  
+  // Test output formatting
+  const inflectionLine = analyzer.formatInflectionLine(result);
+  assert(inflectionLine.includes('ab'), 'Should contain "ab"');
+  assert(inflectionLine.includes('PREP'), 'Should contain "PREP"');
+  assert(inflectionLine.includes('ABL'), 'Should contain "ABL"');
+  assert(inflectionLine.match(/ab\s+PREP\s+ABL/), 'Should have correct spacing');
+  
+  const dictForm = analyzer.formatDictionaryForm(result);
+  assert(dictForm.includes('ab  PREP  ABL'), 'Dictionary form should show "ab  PREP  ABL"');
+  assert(dictForm.includes('[XXXAO]'), 'Should include frequency code');
+});
+
 test('Macron handling', () => {
   const dict = Dictionary.createSampleDictionary();
   const inflDb = new InflectionDatabase('../INFLECTS.LAT');

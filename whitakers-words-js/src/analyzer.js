@@ -16,10 +16,12 @@ export class WordAnalyzer {
     const exactMatches = this.findExactMatches(word);
     results.push(...exactMatches);
     
-    // Try removing inflection endings (skip if exact personal pronoun match found)
-    const hasExactPersonalPronoun = exactMatches.some(m => 
-      m.dictEntry.part.pofs === PartOfSpeech.PRON && m.dictEntry.part.pron.decl === 5);
-    if (!hasExactPersonalPronoun) {
+    // Skip inflection matching for strictly indeclinable words that have exact matches
+    const hasStrictlyIndeclinableMatch = exactMatches.some(m => 
+      [PartOfSpeech.PREP, PartOfSpeech.CONJ, PartOfSpeech.INTERJ].includes(m.dictEntry.part.pofs) ||
+      (m.dictEntry.part.pofs === PartOfSpeech.PRON && m.dictEntry.part.pron.decl === 5));
+    
+    if (!hasStrictlyIndeclinableMatch) {
       const inflectionMatches = this.findInflectionMatches(word);
       results.push(...inflectionMatches);
     }
@@ -466,7 +468,7 @@ export class WordAnalyzer {
       // For non-inflected words like prepositions and adverbs
       if (parseRecord.dictEntry.part.pofs === PartOfSpeech.PREP) {
         const obj = parseRecord.dictEntry.part.prep?.obj || '';
-        output += `${obj}`.padEnd(25, ' ');
+        output += `${obj}`.padEnd(40, ' ');
       } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.ADV) {
         // Check if inflection has comparison degree info
         if (inflection && inflection.qual && inflection.qual.adv && inflection.qual.adv.comp) {

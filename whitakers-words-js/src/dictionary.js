@@ -347,6 +347,12 @@ export class Dictionary {
         part: { pofs: PartOfSpeech.V, v: { con: 3, var: 1, dep: true } },
         tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
         mean: 'follow; pursue; conform; imitate; come after; result from; attend;'
+      },
+      {
+        stems: new StemKey('ab'),
+        part: { pofs: PartOfSpeech.PREP, prep: { obj: 'ABL' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
+        mean: 'by (agent), from (departure, cause, remote origin/time); after (reference);'
       }
     ];
     

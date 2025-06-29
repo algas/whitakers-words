@@ -199,18 +199,28 @@ function processWord(word) {
           return 0;
         });
         
-        // First output filtered inflection forms to match expected output
+        // For indeclinable words (PREP, CONJ, ADV, INTERJ), show only one inflection line
         const filteredGroup = filterForExpectedOutput(sortedGroup);
-        for (const result of filteredGroup) {
-          console.log(analyzer.formatInflectionLine(result));
+        if (dictEntry.part.pofs === 'PREP' || dictEntry.part.pofs === 'CONJ' || 
+            dictEntry.part.pofs === 'INTERJ' || 
+            (dictEntry.part.pofs === 'ADV' && !filteredGroup.some(r => r.inflection?.qual?.adv?.comp))) {
+          // For indeclinable words, show only the first result
+          if (filteredGroup.length > 0) {
+            console.log(analyzer.formatInflectionLine(filteredGroup[0]));
+          }
+        } else {
+          // For declinable words, show all filtered inflection forms
+          for (const result of filteredGroup) {
+            console.log(analyzer.formatInflectionLine(result));
+          }
         }
         // Then output dictionary form and meaning once
         console.log(analyzer.formatDictionaryForm(group[0]));
         console.log(group[0].dictEntry.mean);
       }
       
-      // Add separator if multiple entries or if it's a complex word form
-      if (grouped.size > 1 || results.length > 1) {
+      // Add separator if multiple entries
+      if (grouped.size > 1) {
         console.log('*');
       }
     }
