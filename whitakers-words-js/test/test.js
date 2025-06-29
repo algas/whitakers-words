@@ -678,4 +678,74 @@ test('amatus output format matches expected', () => {
          'ADJ dict should match expected format');
 });
 
+test('supine parsing - amatum and amatu', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  // Test accusative supine "amatum"
+  const results1 = analyzer.analyze('amatum');
+  const supineResult1 = results1.find(r => r.inflection && r.inflection.qual.pofs === 'SUPINE');
+  
+  assert(supineResult1, 'Should find SUPINE form of "amatum"');
+  assert.equal(supineResult1.dictEntry.part.pofs, 'V', 'Should match against verb entry');
+  assert.equal(supineResult1.inflection.qual.supine.cs, 'ACC', 'Should be accusative case');
+  assert.equal(supineResult1.inflection.qual.supine.number, 'S', 'Should be singular');
+  assert.equal(supineResult1.inflection.qual.supine.gender, 'N', 'Should be neuter');
+  assert.equal(supineResult1.inflection.key, 4, 'Should use stem 4 (supine stem)');
+  
+  // Test inflection line formatting
+  const line1 = analyzer.formatInflectionLine(supineResult1);
+  assert(line1.match(/^amat\.um\s+SUPINE\s+1\s+1\s+ACC\s+S\s+N/), 
+         'SUPINE accusative line should match expected format');
+  
+  // Test ablative supine "amatu"
+  const results2 = analyzer.analyze('amatu');
+  const supineResult2 = results2.find(r => r.inflection && r.inflection.qual.pofs === 'SUPINE');
+  
+  assert(supineResult2, 'Should find SUPINE form of "amatu"');
+  assert.equal(supineResult2.dictEntry.part.pofs, 'V', 'Should match against verb entry');
+  assert.equal(supineResult2.inflection.qual.supine.cs, 'ABL', 'Should be ablative case');
+  assert.equal(supineResult2.inflection.qual.supine.number, 'S', 'Should be singular');
+  assert.equal(supineResult2.inflection.qual.supine.gender, 'N', 'Should be neuter');
+  assert.equal(supineResult2.inflection.key, 4, 'Should use stem 4 (supine stem)');
+  
+  // Test inflection line formatting
+  const line2 = analyzer.formatInflectionLine(supineResult2);
+  assert(line2.match(/^amat\.u\s+SUPINE\s+1\s+1\s+ABL\s+S\s+N/), 
+         'SUPINE ablative line should match expected format');
+});
+
+test('amatu supine output format matches expected', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('amatu');
+  assert(results.length >= 1, 'Should find SUPINE form');
+  
+  // Find SUPINE result
+  const supineResult = results.find(r => r.inflection && r.inflection.qual.pofs === 'SUPINE');
+  assert(supineResult, 'Should find SUPINE (ablative supine) result');
+  
+  // Check SUPINE details
+  assert.equal(supineResult.dictEntry.part.pofs, 'V', 'SUPINE should match against verb entry');
+  assert.equal(supineResult.dictEntry.part.v.con, 1, 'Should be 1st conjugation verb');
+  assert(supineResult.dictEntry.mean.includes('love'), 'Should mean "love"');
+  assert.equal(supineResult.inflection.qual.supine.cs, 'ABL', 'Should be ablative');
+  assert.equal(supineResult.inflection.qual.supine.number, 'S', 'Should be singular');
+  assert.equal(supineResult.inflection.qual.supine.gender, 'N', 'Should be neuter');
+  assert.equal(supineResult.inflection.key, 4, 'Should use stem4 (supine stem)');
+  
+  // Test exact output format
+  const supineLine = analyzer.formatInflectionLine(supineResult);
+  const supineDict = analyzer.formatDictionaryForm(supineResult);
+  
+  // Check SUPINE formatting matches expected output
+  assert(supineLine.match(/^amat\.u\s+SUPINE\s+1\s+1\s+ABL\s+S\s+N/), 
+         'SUPINE line should match expected format');
+  assert(supineDict.match(/^amo, amare, amavi, amatus\s+V\s+\(1st\)\s+\[XXXAO\]/), 
+         'SUPINE dict should match expected format');
+});
+
 console.log('All tests completed!');

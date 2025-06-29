@@ -69,6 +69,8 @@ export class InflectionDatabase {
       return this.parseInterjectionInflection(parts);
     } else if (pofs === 'VPAR') {
       return this.parseParticipleInflection(parts);
+    } else if (pofs === 'SUPINE') {
+      return this.parseSupineInflection(parts);
     }
     
     return null;
@@ -239,6 +241,29 @@ export class InflectionDatabase {
       qual: {
         pofs: PartOfSpeech.VPAR,
         vpar: { con, var: var_num, cs, number, gender, tense, voice, mood }
+      },
+      ending,
+      key: stem_key
+    };
+  }
+
+  parseSupineInflection(parts) {
+    // SUPINE 0 0 ACC S N  4 2 um                          X A
+    if (parts.length < 9) return null;
+    
+    const con = parseInt(parts[1]);
+    const var_num = parseInt(parts[2]);
+    const cs = parts[3];
+    const number = parts[4];
+    const gender = parts[5];
+    const stem_key = parseInt(parts[6]);
+    // const ending_size = parseInt(parts[7]); // Not used in current implementation
+    const ending = parts[8] || '';
+    
+    return {
+      qual: {
+        pofs: PartOfSpeech.SUPINE,
+        supine: { con, var: var_num, cs, number, gender }
       },
       ending,
       key: stem_key

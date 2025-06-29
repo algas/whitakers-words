@@ -207,6 +207,29 @@ export class WordAnalyzer {
                 results.push(parse);
               }
             }
+          } else if (inflection.qual.pofs === PartOfSpeech.SUPINE && entry.part.pofs === PartOfSpeech.V) {
+            // SUPINE inflections match against verb entries
+            // Further validation based on conjugation
+            if (this.validateInflection(entry, inflection)) {
+              // For inflections with specific stem keys, verify the stem matches
+              if (inflection.key && inflection.key > 0) {
+                const expectedStem = this.getDictionaryStem(entry.stems, inflection.key);
+                if (expectedStem.trim() !== stem) {
+                  continue;
+                }
+              }
+              
+              // Create unique key to avoid duplicates
+              const key = `${stem}-${entry.part.pofs}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
+              if (!seen.has(key)) {
+                seen.add(key);
+                const parse = new ParseRecord();
+                parse.stem = entry.stems;
+                parse.inflection = inflection;
+                parse.dictEntry = entry;
+                results.push(parse);
+              }
+            }
           }
         }
       }
@@ -273,6 +296,16 @@ export class WordAnalyzer {
       
       const entryVar = entry.part.v.var || 1;
       const inflVar = inflection.qual.vpar.var !== undefined ? inflection.qual.vpar.var : 1;
+      const varMatch = inflVar === 0 || entryVar === inflVar;
+      
+      return conMatch && varMatch;
+    } else if (inflection.qual.pofs === PartOfSpeech.SUPINE && entry.part.pofs === PartOfSpeech.V) {
+      // SUPINE inflections match against verb entries
+      const inflCon = inflection.qual.supine.con || 0;
+      const conMatch = inflCon === 0 || entry.part.v.con === inflCon;
+      
+      const entryVar = entry.part.v.var || 1;
+      const inflVar = inflection.qual.supine.var !== undefined ? inflection.qual.supine.var : 1;
       const varMatch = inflVar === 0 || entryVar === inflVar;
       
       return conMatch && varMatch;
@@ -357,8 +390,10 @@ export class WordAnalyzer {
     // Pad to column 21
     output = output.padEnd(21, ' ');
     
-    // Add part of speech (show VPAR for participles, otherwise use dictionary entry's pofs)
-    const displayPofs = (inflection && inflection.qual.pofs === PartOfSpeech.VPAR) ? 'VPAR' : parseRecord.dictEntry.part.pofs;
+    // Add part of speech (show VPAR for participles, SUPINE for supines, otherwise use dictionary entry's pofs)
+    const displayPofs = (inflection && inflection.qual.pofs === PartOfSpeech.VPAR) ? 'VPAR' : 
+                       (inflection && inflection.qual.pofs === PartOfSpeech.SUPINE) ? 'SUPINE' : 
+                       parseRecord.dictEntry.part.pofs;
     output += displayPofs.padEnd(7, ' ');
     
     // Add declension/conjugation info
@@ -371,6 +406,8 @@ export class WordAnalyzer {
     } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.PRON) {
       output += `${parseRecord.dictEntry.part.pron.decl} ${parseRecord.dictEntry.part.pron.var || 1} `;
     } else if (inflection && inflection.qual.pofs === PartOfSpeech.VPAR && parseRecord.dictEntry.part.pofs === PartOfSpeech.V) {
+      output += `${parseRecord.dictEntry.part.v.con} ${parseRecord.dictEntry.part.v.var || 1} `;
+    } else if (inflection && inflection.qual.pofs === PartOfSpeech.SUPINE && parseRecord.dictEntry.part.pofs === PartOfSpeech.V) {
       output += `${parseRecord.dictEntry.part.v.con} ${parseRecord.dictEntry.part.v.var || 1} `;
     }
     
@@ -396,6 +433,9 @@ export class WordAnalyzer {
       } else if (inflection.qual.pofs === PartOfSpeech.VPAR) {
         const vpar = inflection.qual.vpar;
         output += `${vpar.cs} ${vpar.number} ${vpar.gender} ${vpar.tense} ${vpar.voice} ${vpar.mood}`.padEnd(25, ' ');
+      } else if (inflection.qual.pofs === PartOfSpeech.SUPINE) {
+        const supine = inflection.qual.supine;
+        output += `${supine.cs} ${supine.number} ${supine.gender}`.padEnd(25, ' ');
       }
     } else {
       // For non-inflected words like prepositions and adverbs
