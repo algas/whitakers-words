@@ -302,7 +302,7 @@ test('cornu output format matches expected', () => {
   }
   
   // Sort groups by part of speech, then by gender (F before N), then by declension
-  const sortedGroups = Array.from(grouped.entries()).sort(([keyA, groupA], [keyB, groupB]) => {
+  const sortedGroups = Array.from(grouped.entries()).sort(([, groupA], [, groupB]) => {
     const entryA = groupA[0].dictEntry;
     const entryB = groupB[0].dictEntry;
     
@@ -331,9 +331,9 @@ test('cornu output format matches expected', () => {
   assert(sortedGroups.length >= 2, 'Should have at least 2 groups (feminine and neuter)');
   
   // Check that we have both 4th declension feminine and neuter entries
-  const femGroup = sortedGroups.find(([key, group]) => 
+  const femGroup = sortedGroups.find(([, group]) => 
     group[0].dictEntry.part.n.gender === 'F' && group[0].dictEntry.part.n.decl === 4);
-  const neutGroup = sortedGroups.find(([key, group]) => 
+  const neutGroup = sortedGroups.find(([, group]) => 
     group[0].dictEntry.part.n.gender === 'N' && group[0].dictEntry.part.n.decl === 4);
   
   assert(femGroup, 'Should have 4th declension feminine group');
@@ -629,7 +629,7 @@ test('amatus output format matches expected', () => {
   assert(grouped.size === 2, 'Should have exactly 2 groups (verb for VPAR, adj for ADJ)');
   
   // Test that VPAR comes before ADJ in sorting
-  const sortedGroups = Array.from(grouped.entries()).sort(([keyA, groupA], [keyB, groupB]) => {
+  const sortedGroups = Array.from(grouped.entries()).sort(([, groupA], [, groupB]) => {
     const entryA = groupA[0].dictEntry;
     const entryB = groupB[0].dictEntry;
     const inflectionA = groupA[0].inflection;
