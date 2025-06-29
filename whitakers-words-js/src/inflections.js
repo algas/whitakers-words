@@ -67,6 +67,8 @@ export class InflectionDatabase {
       return this.parseConjunctionInflection(parts);
     } else if (pofs === 'INTERJ') {
       return this.parseInterjectionInflection(parts);
+    } else if (pofs === 'VPAR') {
+      return this.parseParticipleInflection(parts);
     }
     
     return null;
@@ -214,6 +216,32 @@ export class InflectionDatabase {
       },
       ending: '',
       key: 1
+    };
+  }
+
+  parseParticipleInflection(parts) {
+    // VPAR  1 0 NOM S M PERF PASSIVE PPL 4 2 us        X A
+    if (parts.length < 12) return null;
+    
+    const con = parseInt(parts[1]);
+    const var_num = parseInt(parts[2]);
+    const cs = parts[3];
+    const number = parts[4];
+    const gender = parts[5];
+    const tense = parts[6];
+    const voice = parts[7];
+    const mood = parts[8];
+    const stem_key = parseInt(parts[9]);
+    // const ending_size = parseInt(parts[10]); // Not used in current implementation
+    const ending = parts[11] || '';
+    
+    return {
+      qual: {
+        pofs: PartOfSpeech.VPAR,
+        vpar: { con, var: var_num, cs, number, gender, tense, voice, mood }
+      },
+      ending,
+      key: stem_key
     };
   }
 

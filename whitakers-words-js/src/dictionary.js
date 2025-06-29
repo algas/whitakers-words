@@ -215,10 +215,16 @@ export class Dictionary {
     // Sample entries
     dict.entries = [
       {
-        stems: new StemKey('am', 'am', 'amat', 'amat'),
+        stems: new StemKey('am', 'am', 'amav', 'amat'),
         part: { pofs: PartOfSpeech.V, v: { con: 1, var: 1 } },
-        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
-        mean: 'love, like; fall in love with; be fond of; have a tendency to'
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
+        mean: 'love, like; fall in love with; be fond of; have a tendency to;'
+      },
+      {
+        stems: new StemKey('amat', 'amat'),
+        part: { pofs: PartOfSpeech.ADJ, adj: { decl: 1, var: 1 } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'E', source: 'O' },
+        mean: 'loved, beloved;'
       },
       {
         stems: new StemKey('puell', 'puell'),

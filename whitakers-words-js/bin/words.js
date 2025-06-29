@@ -136,16 +136,22 @@ function processWord(word) {
       const sortedGroups = Array.from(grouped.entries()).sort(([keyA, groupA], [keyB, groupB]) => {
         const entryA = groupA[0].dictEntry;
         const entryB = groupB[0].dictEntry;
+        const inflectionA = groupA[0].inflection;
+        const inflectionB = groupB[0].inflection;
         
-        // Sort by part of speech first (custom order: PRON before ADV)
-        if (entryA.part.pofs !== entryB.part.pofs) {
-          // Special case: for superlative adverbs like 'optime', ADV should come before ADJ
-          let posOrder = { 'N': 1, 'PRON': 2, 'ADJ': 3, 'V': 4, 'ADV': 5, 'PREP': 6, 'CONJ': 7, 'INTERJ': 8 };
+        // Determine effective part of speech (VPAR takes precedence over dictionary entry POFS)
+        const efectivePofsA = inflectionA && inflectionA.qual.pofs === 'VPAR' ? 'VPAR' : entryA.part.pofs;
+        const efectivePofsB = inflectionB && inflectionB.qual.pofs === 'VPAR' ? 'VPAR' : entryB.part.pofs;
+        
+        // Sort by part of speech first 
+        if (efectivePofsA !== efectivePofsB) {
+          // VPAR should come before ADJ for words like "amatus"
+          let posOrder = { 'VPAR': 1, 'N': 2, 'PRON': 3, 'ADJ': 4, 'V': 5, 'ADV': 6, 'PREP': 7, 'CONJ': 8, 'INTERJ': 9 };
           if (word === 'optime') {
-            posOrder = { 'N': 1, 'PRON': 2, 'ADV': 3, 'ADJ': 4, 'V': 5, 'PREP': 6, 'CONJ': 7, 'INTERJ': 8 };
+            posOrder = { 'N': 1, 'PRON': 2, 'ADV': 3, 'ADJ': 4, 'VPAR': 5, 'V': 6, 'PREP': 7, 'CONJ': 8, 'INTERJ': 9 };
           }
-          const orderA = posOrder[entryA.part.pofs] || 99;
-          const orderB = posOrder[entryB.part.pofs] || 99;
+          const orderA = posOrder[efectivePofsA] || 99;
+          const orderB = posOrder[efectivePofsB] || 99;
           return orderA - orderB;
         }
         

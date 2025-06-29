@@ -180,6 +180,33 @@ export class WordAnalyzer {
                 results.push(parse);
               }
             }
+          } else if (inflection.qual.pofs === PartOfSpeech.VPAR && entry.part.pofs === PartOfSpeech.V) {
+            // VPAR inflections match against verb entries
+            // Skip adverbs for inflection matching (they are handled as exact matches)
+            if (entry.part.pofs === PartOfSpeech.ADV) {
+              continue;
+            }
+            // Further validation based on declension/conjugation
+            if (this.validateInflection(entry, inflection)) {
+              // For inflections with specific stem keys, verify the stem matches
+              if (inflection.key && inflection.key > 0) {
+                const expectedStem = this.getDictionaryStem(entry.stems, inflection.key);
+                if (expectedStem.trim() !== stem) {
+                  continue;
+                }
+              }
+              
+              // Create unique key to avoid duplicates
+              const key = `${stem}-${entry.part.pofs}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
+              if (!seen.has(key)) {
+                seen.add(key);
+                const parse = new ParseRecord();
+                parse.stem = entry.stems;
+                parse.inflection = inflection;
+                parse.dictEntry = entry;
+                results.push(parse);
+              }
+            }
           }
         }
       }
@@ -239,6 +266,16 @@ export class WordAnalyzer {
       return declMatch && varMatch;
     } else if (inflection.qual.pofs === PartOfSpeech.PRON && entry.part.pofs === PartOfSpeech.PRON) {
       return entry.part.pron.decl === inflection.qual.pron.decl;
+    } else if (inflection.qual.pofs === PartOfSpeech.VPAR && entry.part.pofs === PartOfSpeech.V) {
+      // VPAR inflections match against verb entries
+      const inflCon = inflection.qual.vpar.con || 0;
+      const conMatch = inflCon === 0 || entry.part.v.con === inflCon;
+      
+      const entryVar = entry.part.v.var || 1;
+      const inflVar = inflection.qual.vpar.var !== undefined ? inflection.qual.vpar.var : 1;
+      const varMatch = inflVar === 0 || entryVar === inflVar;
+      
+      return conMatch && varMatch;
     }
     
     return true;
@@ -320,8 +357,9 @@ export class WordAnalyzer {
     // Pad to column 21
     output = output.padEnd(21, ' ');
     
-    // Add part of speech
-    output += parseRecord.dictEntry.part.pofs.padEnd(7, ' ');
+    // Add part of speech (show VPAR for participles, otherwise use dictionary entry's pofs)
+    const displayPofs = (inflection && inflection.qual.pofs === PartOfSpeech.VPAR) ? 'VPAR' : parseRecord.dictEntry.part.pofs;
+    output += displayPofs.padEnd(7, ' ');
     
     // Add declension/conjugation info
     if (parseRecord.dictEntry.part.pofs === PartOfSpeech.N) {
@@ -332,6 +370,8 @@ export class WordAnalyzer {
       output += `${parseRecord.dictEntry.part.adj.decl} ${parseRecord.dictEntry.part.adj.var || 1} `;
     } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.PRON) {
       output += `${parseRecord.dictEntry.part.pron.decl} ${parseRecord.dictEntry.part.pron.var || 1} `;
+    } else if (inflection && inflection.qual.pofs === PartOfSpeech.VPAR && parseRecord.dictEntry.part.pofs === PartOfSpeech.V) {
+      output += `${parseRecord.dictEntry.part.v.con} ${parseRecord.dictEntry.part.v.var || 1} `;
     }
     
     // Add inflection details
@@ -353,6 +393,9 @@ export class WordAnalyzer {
       } else if (inflection.qual.pofs === PartOfSpeech.ADV) {
         const adv = inflection.qual.adv;
         output += `${adv.comp || 'POS'}`.padEnd(25, ' ');
+      } else if (inflection.qual.pofs === PartOfSpeech.VPAR) {
+        const vpar = inflection.qual.vpar;
+        output += `${vpar.cs} ${vpar.number} ${vpar.gender} ${vpar.tense} ${vpar.voice} ${vpar.mood}`.padEnd(25, ' ');
       }
     } else {
       // For non-inflected words like prepositions and adverbs
@@ -461,9 +504,9 @@ export class WordAnalyzer {
       }
       output += `${entry.part.n.gender || ''}`;
     } else if (entry.part.pofs === PartOfSpeech.ADJ) {
-      // Adjective: show forms with comparative and superlative
+      // Adjective: show simple positive forms
       if (entry.part.adj.decl === 1 || entry.part.adj.decl === 2) {
-        output += `${stems.stem1.trim()}us, ${stems.stem1.trim()}a -um, melior -or -us, optimus -a -um`;
+        output += `${stems.stem1.trim()}us, ${stems.stem1.trim()}a, ${stems.stem1.trim()}um`;
       } else if (entry.part.adj.decl === 3) {
         // 3rd declension adjectives
         const base = stems.stem1.trim();
@@ -529,6 +572,21 @@ export class WordAnalyzer {
     }
     
     output += `   [${age}${area}${geo}${freq}${source}]`;
+    
+    // Add frequency text for uncommon entries
+    const freqTexts = {
+      'A': '', // Very common, no text
+      'B': '', // Common, no text  
+      'C': '', // Less common, no text
+      'D': '', // Uncommon, no text for now
+      'E': '    uncommon',
+      'F': '    rare',
+      'I': '    very rare'
+    };
+    
+    if (freqTexts[freq]) {
+      output += freqTexts[freq];
+    }
     
     return output;
   }

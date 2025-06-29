@@ -503,8 +503,8 @@ test('superlative adverb optime', () => {
   assert(advDict.includes('[XXXAO]'), 'Should have frequency code [XXXAO]');
   
   const adjDict = analyzer.formatDictionaryForm(adjResult);
-  assert(adjDict.includes('bonus, bona -um'), 'Should show positive adjective forms');
-  assert(adjDict.includes('optimus -a -um'), 'Should show superlative adjective forms');
+  assert(adjDict.includes('bonus, bona, bonum'), 'Should show positive adjective forms');
+  // Note: superlative forms are not shown in the simplified format
 });
 
 test('pluperfect subjunctive monuissemus', () => {
@@ -546,6 +546,136 @@ test('pluperfect subjunctive monuissemus', () => {
   assert(dictForm.includes('monui, monitus'), 'Should show perfect and passive principal parts');
   assert(dictForm.includes('V (2nd)'), 'Should indicate 2nd conjugation');
   assert(dictForm.includes('[XXXAX]'), 'Should have frequency code [XXXAX]');
+});
+
+test('amatus - perfect passive participle and adjective', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('amatus');
+  assert(results.length >= 2, 'Should find both VPAR and ADJ forms');
+  
+  // Find VPAR and ADJ results
+  const vparResult = results.find(r => r.inflection && r.inflection.qual.pofs === 'VPAR');
+  const adjResult = results.find(r => r.dictEntry.part.pofs === 'ADJ');
+  
+  assert(vparResult, 'Should find VPAR (perfect passive participle) result');
+  assert(adjResult, 'Should find ADJ (adjective) result');
+  
+  // Check VPAR details
+  assert.equal(vparResult.dictEntry.part.pofs, 'V', 'VPAR should match against verb entry');
+  assert.equal(vparResult.dictEntry.part.v.con, 1, 'Should be 1st conjugation verb');
+  assert(vparResult.dictEntry.mean.includes('love'), 'Should mean "love"');
+  assert.equal(vparResult.inflection.qual.vpar.cs, 'NOM', 'Should be nominative');
+  assert.equal(vparResult.inflection.qual.vpar.number, 'S', 'Should be singular');
+  assert.equal(vparResult.inflection.qual.vpar.gender, 'M', 'Should be masculine');
+  assert.equal(vparResult.inflection.qual.vpar.tense, 'PERF', 'Should be perfect');
+  assert.equal(vparResult.inflection.qual.vpar.voice, 'PASSIVE', 'Should be passive');
+  assert.equal(vparResult.inflection.qual.vpar.mood, 'PPL', 'Should be participle');
+  assert.equal(vparResult.inflection.key, 4, 'Should use stem4 (perfect passive stem)');
+  
+  // Check ADJ details
+  assert.equal(adjResult.dictEntry.part.pofs, 'ADJ', 'Should be adjective');
+  assert.equal(adjResult.dictEntry.part.adj.decl, 1, 'Should be 1st declension adjective');
+  assert(adjResult.dictEntry.mean.includes('beloved'), 'Should mean "beloved"');
+  assert.equal(adjResult.inflection.qual.adj.cs, 'NOM', 'Should be nominative');
+  assert.equal(adjResult.inflection.qual.adj.number, 'S', 'Should be singular');
+  assert.equal(adjResult.inflection.qual.adj.gender, 'M', 'Should be masculine');
+  assert.equal(adjResult.inflection.key, 1, 'Should use stem1');
+  
+  // Test inflection line formatting
+  const vparLine = analyzer.formatInflectionLine(vparResult);
+  assert(vparLine.startsWith('amat.us'), 'VPAR should show amat.us');
+  assert(vparLine.includes('VPAR'), 'Should show VPAR in inflection line');
+  assert(vparLine.includes('PERF PASSIVE PPL'), 'Should show PERF PASSIVE PPL');
+  
+  const adjLine = analyzer.formatInflectionLine(adjResult);
+  assert(adjLine.startsWith('amat.us'), 'ADJ should show amat.us');
+  assert(adjLine.includes('ADJ'), 'Should show ADJ in inflection line');
+  assert(adjLine.includes('POS'), 'Should show POS (positive degree)');
+  
+  // Test dictionary form formatting
+  const vparDict = analyzer.formatDictionaryForm(vparResult);
+  assert(vparDict.includes('amo, amare, amavi, amatus'), 'Should show verb principal parts');
+  assert(vparDict.includes('V (1st)'), 'Should indicate 1st conjugation');
+  assert(vparDict.includes('[XXXAO]'), 'Should have frequency code [XXXAO]');
+  
+  const adjDict = analyzer.formatDictionaryForm(adjResult);
+  assert(adjDict.includes('amatus, amata, amatum'), 'Should show adjective forms');
+  assert(adjDict.includes('ADJ'), 'Should indicate adjective');
+  assert(adjDict.includes('[XXXEO]'), 'Should have frequency code [XXXEO]');
+  assert(adjDict.includes('uncommon'), 'Should show frequency text for E code');
+});
+
+test('amatus output format matches expected', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('amatus');
+  assert(results.length >= 2, 'Should find both forms');
+  
+  // Group results by dictionary entry (same logic as in words.js)
+  const grouped = new Map();
+  for (const result of results) {
+    const key = JSON.stringify(result.dictEntry);
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+    grouped.get(key).push(result);
+  }
+  
+  assert(grouped.size === 2, 'Should have exactly 2 groups (verb for VPAR, adj for ADJ)');
+  
+  // Test that VPAR comes before ADJ in sorting
+  const sortedGroups = Array.from(grouped.entries()).sort(([keyA, groupA], [keyB, groupB]) => {
+    const entryA = groupA[0].dictEntry;
+    const entryB = groupB[0].dictEntry;
+    const inflectionA = groupA[0].inflection;
+    const inflectionB = groupB[0].inflection;
+    
+    // Determine effective part of speech (VPAR takes precedence over dictionary entry POFS)
+    const efectivePofsA = inflectionA && inflectionA.qual.pofs === 'VPAR' ? 'VPAR' : entryA.part.pofs;
+    const efectivePofsB = inflectionB && inflectionB.qual.pofs === 'VPAR' ? 'VPAR' : entryB.part.pofs;
+    
+    if (efectivePofsA !== efectivePofsB) {
+      const posOrder = { 'VPAR': 1, 'N': 2, 'PRON': 3, 'ADJ': 4, 'V': 5, 'ADV': 6, 'PREP': 7, 'CONJ': 8, 'INTERJ': 9 };
+      const orderA = posOrder[efectivePofsA] || 99;
+      const orderB = posOrder[efectivePofsB] || 99;
+      return orderA - orderB;
+    }
+    return 0;
+  });
+  
+  // First group should be VPAR, second should be ADJ
+  const firstGroup = sortedGroups[0][1];
+  const secondGroup = sortedGroups[1][1];
+  
+  const firstInflection = firstGroup[0].inflection;
+  const secondEntry = secondGroup[0].dictEntry;
+  
+  assert.equal(firstInflection.qual.pofs, 'VPAR', 'First group should be VPAR');
+  assert.equal(secondEntry.part.pofs, 'ADJ', 'Second group should be ADJ');
+  
+  // Test exact output format
+  const vparLine = analyzer.formatInflectionLine(firstGroup[0]);
+  const vparDict = analyzer.formatDictionaryForm(firstGroup[0]);
+  
+  const adjLine = analyzer.formatInflectionLine(secondGroup[0]);
+  const adjDict = analyzer.formatDictionaryForm(secondGroup[0]);
+  
+  // Check VPAR formatting matches expected output
+  assert(vparLine.match(/^amat\.us\s+VPAR\s+1\s+1\s+NOM\s+S\s+M\s+PERF\s+PASSIVE\s+PPL/), 
+         'VPAR line should match expected format');
+  assert(vparDict.match(/^amo, amare, amavi, amatus\s+V\s+\(1st\)\s+\[XXXAO\]/), 
+         'VPAR dict should match expected format');
+  
+  // Check ADJ formatting matches expected output  
+  assert(adjLine.match(/^amat\.us\s+ADJ\s+1\s+1\s+NOM\s+S\s+M\s+POS/), 
+         'ADJ line should match expected format');
+  assert(adjDict.match(/^amatus, amata, amatum\s+ADJ\s+\[XXXEO\]\s+uncommon/), 
+         'ADJ dict should match expected format');
 });
 
 console.log('All tests completed!');
