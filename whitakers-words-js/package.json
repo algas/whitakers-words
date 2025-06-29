@@ -8,12 +8,15 @@
     "words": "./bin/words.js"
   },
   "scripts": {
-    "test": "node --test",
+    "test": "node --test test/*.js",
     "words": "node bin/words.js",
     "makedict": "node bin/makedict.js",
     "makestem": "node bin/makestem.js",
     "makeinfl": "node bin/makeinfl.js",
-    "makeewds": "node bin/makeewds.js"
+    "makeewds": "node bin/makeewds.js",
+    "debug:analyze": "node debug/analyze-word.js",
+    "debug:duplicates": "node debug/investigate-duplicates.js",
+    "debug:inflections": "node debug/test-inflections.js"
   },
   "keywords": ["latin", "dictionary", "linguistics", "whitakers-words"],
   "author": "",

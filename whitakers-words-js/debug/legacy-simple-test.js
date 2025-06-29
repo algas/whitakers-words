@@ -61,7 +61,7 @@ if (!hasExactPersonalPronoun) {
   });
 }
 
-const trickMatches = analyzer.applyTricks(preprocessed);
+const trickMatches = analyzer.applyPrefixTricks(preprocessed);
 console.log(`Trick matches: ${trickMatches.length}`);
 
 const allResults = [...exactMatches, ...analyzer.findInflectionMatches(preprocessed), ...trickMatches];
