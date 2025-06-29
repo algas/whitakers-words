@@ -52,6 +52,47 @@ export class WordAnalyzer {
       }
     }
     
+    // Check for enclitics early
+    const enclitics = [
+      { suffix: 'que', meaning: '-que = and (enclitic, translated before attached word); completes plerus/uter;' },
+      { suffix: 've', meaning: '-ve = or (enclitic)' },
+      { suffix: 'ne', meaning: '-ne = ?' }
+    ];
+    
+    for (const enclitic of enclitics) {
+      if (word.endsWith(enclitic.suffix) && word.length > enclitic.suffix.length + 2) {
+        const base = word.substring(0, word.length - enclitic.suffix.length);
+        const subResults = this.analyze(base);
+        
+        if (subResults.length > 0) {
+          // Create TACKON entry for the enclitic
+          const tackonEntry = {
+            stems: { 
+              stem1: enclitic.suffix, 
+              stem2: '', 
+              stem3: '', 
+              stem4: '' 
+            },
+            part: { 
+              pofs: PartOfSpeech.TACKON
+            },
+            tran: { 
+              age: 'X', area: 'X', geo: 'X', freq: 'X', source: 'X' 
+            },
+            mean: enclitic.meaning
+          };
+          
+          const tackonParse = new ParseRecord();
+          tackonParse.stem = tackonEntry.stems;
+          tackonParse.dictEntry = tackonEntry;
+          tackonParse.inflection = null; // TACKONs are indeclinable
+          
+          // Return TACKON first, then base word results
+          return [tackonParse, ...subResults];
+        }
+      }
+    }
+    
     // Try exact match first
     const exactMatches = this.findExactMatches(word);
     results.push(...exactMatches);
@@ -60,8 +101,8 @@ export class WordAnalyzer {
     const inflectionMatches = this.findInflectionMatches(word);
     results.push(...inflectionMatches);
     
-    // Try tricks (special cases)
-    const trickMatches = this.applyTricks(word);
+    // Try tricks (special cases) - but skip enclitics since we handled them above
+    const trickMatches = this.applyPrefixTricks(word);
     results.push(...trickMatches);
     
     return results;
@@ -120,9 +161,9 @@ export class WordAnalyzer {
     const entries = this.dictionary.findByStem(word);
     
     for (const entry of entries) {
-      // Check if it's an indeclinable word (CONJ, PREP, ADV, INTERJ, NUM)
+      // Check if it's an indeclinable word (CONJ, PREP, ADV, INTERJ, NUM, TACKON)
       // Only include pronouns for exact matches if they're special cases like "ego"
-      if ([PartOfSpeech.CONJ, PartOfSpeech.PREP, PartOfSpeech.ADV, PartOfSpeech.INTERJ, PartOfSpeech.NUM]
+      if ([PartOfSpeech.CONJ, PartOfSpeech.PREP, PartOfSpeech.ADV, PartOfSpeech.INTERJ, PartOfSpeech.NUM, PartOfSpeech.TACKON]
           .includes(entry.part.pofs) ||
           (entry.part.pofs === PartOfSpeech.PRON && entry.part.pron.decl === 5)) {
         // Skip adverbs that have comparative/superlative forms when looking up the base form
@@ -236,9 +277,10 @@ export class WordAnalyzer {
                 }
               }
               
-              // Create unique key to avoid duplicates - include variant to distinguish different forms
+              // Create unique key to avoid duplicates - include variant and gender to distinguish different forms
               const entryVariant = entry.part.v?.var || entry.part.n?.var || entry.part.adj?.var || entry.part.pron?.var || 0;
-              const key = `${stem}-${entry.part.pofs}-${entryVariant}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
+              const entryGender = entry.part.n?.gender || entry.part.adj?.gender || entry.part.pron?.gender || 'X';
+              const key = `${stem}-${entry.part.pofs}-${entryVariant}-${entryGender}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
               if (!seen.has(key)) {
                 seen.add(key);
                 const parse = new ParseRecord();
@@ -264,9 +306,10 @@ export class WordAnalyzer {
                 }
               }
               
-              // Create unique key to avoid duplicates - include variant to distinguish different forms
+              // Create unique key to avoid duplicates - include variant and gender to distinguish different forms
               const entryVariant = entry.part.v?.var || entry.part.n?.var || entry.part.adj?.var || entry.part.pron?.var || 0;
-              const key = `${stem}-${entry.part.pofs}-${entryVariant}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
+              const entryGender = entry.part.n?.gender || entry.part.adj?.gender || entry.part.pron?.gender || 'X';
+              const key = `${stem}-${entry.part.pofs}-${entryVariant}-${entryGender}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
               if (!seen.has(key)) {
                 seen.add(key);
                 const parse = new ParseRecord();
@@ -288,9 +331,10 @@ export class WordAnalyzer {
                 }
               }
               
-              // Create unique key to avoid duplicates - include variant to distinguish different forms
+              // Create unique key to avoid duplicates - include variant and gender to distinguish different forms
               const entryVariant = entry.part.v?.var || entry.part.n?.var || entry.part.adj?.var || entry.part.pron?.var || 0;
-              const key = `${stem}-${entry.part.pofs}-${entryVariant}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
+              const entryGender = entry.part.n?.gender || entry.part.adj?.gender || entry.part.pron?.gender || 'X';
+              const key = `${stem}-${entry.part.pofs}-${entryVariant}-${entryGender}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
               if (!seen.has(key)) {
                 seen.add(key);
                 const parse = new ParseRecord();
@@ -384,10 +428,10 @@ export class WordAnalyzer {
     return true;
   }
 
-  applyTricks(word) {
+  applyPrefixTricks(word) {
     const results = [];
     
-    // Handle common prefixes and suffixes
+    // Handle common prefixes
     const prefixes = ['ab', 'ad', 'con', 'de', 'dis', 'ex', 'in', 'ob', 'per', 'prae', 'pro', 're', 'sub', 'trans'];
     
     for (const prefix of prefixes) {
@@ -399,27 +443,6 @@ export class WordAnalyzer {
         for (const result of subResults) {
           const modResult = Object.assign({}, result);
           modResult.prefix = prefix;
-          results.push(modResult);
-        }
-      }
-    }
-    
-    // Handle enclitics (-que, -ve, -ne)
-    const enclitics = [
-      { suffix: 'que', meaning: 'and' },
-      { suffix: 've', meaning: 'or' },
-      { suffix: 'ne', meaning: '?' }
-    ];
-    
-    for (const enclitic of enclitics) {
-      if (word.endsWith(enclitic.suffix) && word.length > enclitic.suffix.length + 2) {
-        const base = word.substring(0, word.length - enclitic.suffix.length);
-        const subResults = this.analyze(base);
-        
-        // Add enclitic info to results
-        for (const result of subResults) {
-          const modResult = Object.assign({}, result);
-          modResult.enclitic = enclitic;
           results.push(modResult);
         }
       }
@@ -547,6 +570,9 @@ export class WordAnalyzer {
         // For numerals, show X X and the sort (CARD for basic numbers like septem)
         const sort = parseRecord.dictEntry.part.num.sort === 'X' ? 'CARD' : parseRecord.dictEntry.part.num.sort;
         output += `X X ${sort}`.padEnd(40, ' ');
+      } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.TACKON) {
+        // For TACKON (enclitics), show empty space
+        output += ''.padEnd(40, ' ');
       }
     }
     

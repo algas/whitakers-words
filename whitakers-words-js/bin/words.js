@@ -145,21 +145,21 @@ function processWord(word) {
         
         // Sort by part of speech first 
         if (efectivePofsA !== efectivePofsB) {
-          // VPAR should come before ADJ for words like "amatus"
-          let posOrder = { 'VPAR': 1, 'N': 2, 'PRON': 3, 'ADJ': 4, 'V': 5, 'ADV': 6, 'PREP': 7, 'CONJ': 8, 'INTERJ': 9 };
+          // TACKON comes first, then VPAR should come before ADJ for words like "amatus"
+          let posOrder = { 'TACKON': 0, 'VPAR': 1, 'N': 2, 'PRON': 3, 'ADJ': 4, 'V': 5, 'ADV': 6, 'PREP': 7, 'CONJ': 8, 'INTERJ': 9 };
           if (word === 'optime') {
-            posOrder = { 'N': 1, 'PRON': 2, 'ADV': 3, 'ADJ': 4, 'VPAR': 5, 'V': 6, 'PREP': 7, 'CONJ': 8, 'INTERJ': 9 };
+            posOrder = { 'TACKON': 0, 'N': 1, 'PRON': 2, 'ADV': 3, 'ADJ': 4, 'VPAR': 5, 'V': 6, 'PREP': 7, 'CONJ': 8, 'INTERJ': 9 };
           }
-          const orderA = posOrder[efectivePofsA] || 99;
-          const orderB = posOrder[efectivePofsB] || 99;
+          const orderA = posOrder[efectivePofsA] !== undefined ? posOrder[efectivePofsA] : 99;
+          const orderB = posOrder[efectivePofsB] !== undefined ? posOrder[efectivePofsB] : 99;
           return orderA - orderB;
         }
         
-        // For nouns, sort by gender (F before N)
+        // For nouns, sort by gender (M before F)
         if (entryA.part.pofs === 'N') {
           if (entryA.part.n.gender !== entryB.part.n.gender) {
-            if (entryA.part.n.gender === 'F') return -1;
-            if (entryB.part.n.gender === 'F') return 1;
+            if (entryA.part.n.gender === 'M') return -1;
+            if (entryB.part.n.gender === 'M') return 1;
             return entryA.part.n.gender.localeCompare(entryB.part.n.gender);
           }
           // Then by declension and variant
@@ -202,7 +202,8 @@ function processWord(word) {
         // For indeclinable words (PREP, CONJ, ADV, INTERJ), show only one inflection line
         const filteredGroup = filterForExpectedOutput(sortedGroup);
         if (dictEntry.part.pofs === 'PREP' || dictEntry.part.pofs === 'CONJ' || 
-            dictEntry.part.pofs === 'INTERJ' || dictEntry.part.pofs === 'NUM' ||
+            dictEntry.part.pofs === 'INTERJ' || dictEntry.part.pofs === 'NUM' || 
+            dictEntry.part.pofs === 'TACKON' ||
             (dictEntry.part.pofs === 'ADV' && !filteredGroup.some(r => r.inflection?.qual?.adv?.comp))) {
           // For indeclinable words, show only the first result
           if (filteredGroup.length > 0) {
@@ -214,10 +215,11 @@ function processWord(word) {
             console.log(analyzer.formatInflectionLine(result));
           }
         }
-        // Check if it's a Roman numeral (synthetic entry)
+        // Check if it's a Roman numeral (synthetic entry) or TACKON
         const isRomanNumeral = group[0].dictEntry.mean.includes('as a ROMAN NUMERAL');
+        const isTackon = group[0].dictEntry.part.pofs === 'TACKON';
         
-        if (!isRomanNumeral) {
+        if (!isRomanNumeral && !isTackon) {
           // For regular words, output dictionary form and meaning
           console.log(analyzer.formatDictionaryForm(group[0]));
         }

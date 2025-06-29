@@ -337,6 +337,88 @@ test('Non-Roman numeral should not be recognized', () => {
   assert(!hasRomanNumeral, 'Regular word "septem" should not be treated as Roman numeral');
 });
 
+test('TACKON enclitic -que handling', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  // Test "amatque" - should produce TACKON for -que and analyses for "amat"
+  const results = analyzer.analyze('amatque');
+  
+  assert(results.length >= 2, 'Should find at least 2 results for "amatque"');
+  
+  // Should have TACKON entry first
+  const tackonResult = results.find(r => r.dictEntry.part.pofs === 'TACKON');
+  assert(tackonResult, 'Should find TACKON entry for "-que"');
+  assert.equal(tackonResult.dictEntry.stems.stem1, 'que', 'TACKON stem should be "que"');
+  assert(tackonResult.dictEntry.mean.includes('and (enclitic'), 'TACKON should mean "and (enclitic..."');
+  assert.equal(tackonResult.inflection, null, 'TACKON should have null inflection');
+  
+  // Should have analysis for base word "amat"
+  const verbResult = results.find(r => r.dictEntry.part.pofs === 'V');
+  assert(verbResult, 'Should find verb analysis for base word "amat"');
+  assert(verbResult.dictEntry.mean.includes('love'), 'Should analyze base word meaning');
+});
+
+test('TACKON enclitic -ve handling', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  // Test "puellave" - should produce TACKON for -ve and analyses for "puella"
+  const results = analyzer.analyze('puellave');
+  
+  assert(results.length >= 2, 'Should find at least 2 results for "puellave"');
+  
+  // Should have TACKON entry
+  const tackonResult = results.find(r => r.dictEntry.part.pofs === 'TACKON');
+  assert(tackonResult, 'Should find TACKON entry for "-ve"');
+  assert.equal(tackonResult.dictEntry.stems.stem1, 've', 'TACKON stem should be "ve"');
+  assert(tackonResult.dictEntry.mean.includes('or (enclitic'), 'TACKON should mean "or (enclitic..."');
+  
+  // Should have analysis for base word "puella"
+  const nounResult = results.find(r => r.dictEntry.part.pofs === 'N');
+  assert(nounResult, 'Should find noun analysis for base word "puella"');
+  assert(nounResult.dictEntry.mean.includes('girl'), 'Should analyze base word meaning');
+});
+
+test('TACKON enclitic -ne handling', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  // Test "amane" - should produce TACKON for -ne and analyses for "ama" (imperative)
+  const results = analyzer.analyze('amane');
+  
+  if (results.length >= 2) {
+    // Should have TACKON entry
+    const tackonResult = results.find(r => r.dictEntry.part.pofs === 'TACKON');
+    assert(tackonResult, 'Should find TACKON entry for "-ne"');
+    assert.equal(tackonResult.dictEntry.stems.stem1, 'ne', 'TACKON stem should be "ne"');
+    assert(tackonResult.dictEntry.mean.includes('?'), 'TACKON should be question marker');
+  }
+});
+
+test('No enclitic for short words', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  // Test very short words - should not be analyzed as enclitics
+  const results1 = analyzer.analyze('que');
+  const results2 = analyzer.analyze('ve');
+  const results3 = analyzer.analyze('ne');
+  
+  // These should not produce TACKON entries (too short)
+  const hasTackon1 = results1.some(r => r.dictEntry.part.pofs === 'TACKON');
+  const hasTackon2 = results2.some(r => r.dictEntry.part.pofs === 'TACKON');
+  const hasTackon3 = results3.some(r => r.dictEntry.part.pofs === 'TACKON');
+  
+  assert(!hasTackon1, 'Standalone "que" should not be analyzed as enclitic');
+  assert(!hasTackon2, 'Standalone "ve" should not be analyzed as enclitic');
+  assert(!hasTackon3, 'Standalone "ne" should not be analyzed as enclitic');
+});
+
 test('Macron handling', () => {
   const dict = Dictionary.createSampleDictionary();
   const inflDb = new InflectionDatabase('../INFLECTS.LAT');

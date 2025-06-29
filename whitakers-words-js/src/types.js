@@ -12,6 +12,7 @@ export const PartOfSpeech = {
   PREP: 'PREP', // Preposition
   CONJ: 'CONJ', // Conjunction
   INTERJ: 'INTERJ', // Interjection
+  TACKON: 'TACKON', // Enclitic
   X: 'X'        // Unknown/all
 };
 
