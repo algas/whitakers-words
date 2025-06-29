@@ -169,8 +169,9 @@ export class WordAnalyzer {
                 }
               }
               
-              // Create unique key to avoid duplicates
-              const key = `${stem}-${entry.part.pofs}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
+              // Create unique key to avoid duplicates - include variant to distinguish different forms
+              const entryVariant = entry.part.v?.var || entry.part.n?.var || entry.part.adj?.var || entry.part.pron?.var || 0;
+              const key = `${stem}-${entry.part.pofs}-${entryVariant}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
               if (!seen.has(key)) {
                 seen.add(key);
                 const parse = new ParseRecord();
@@ -196,8 +197,9 @@ export class WordAnalyzer {
                 }
               }
               
-              // Create unique key to avoid duplicates
-              const key = `${stem}-${entry.part.pofs}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
+              // Create unique key to avoid duplicates - include variant to distinguish different forms
+              const entryVariant = entry.part.v?.var || entry.part.n?.var || entry.part.adj?.var || entry.part.pron?.var || 0;
+              const key = `${stem}-${entry.part.pofs}-${entryVariant}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
               if (!seen.has(key)) {
                 seen.add(key);
                 const parse = new ParseRecord();
@@ -219,8 +221,9 @@ export class WordAnalyzer {
                 }
               }
               
-              // Create unique key to avoid duplicates
-              const key = `${stem}-${entry.part.pofs}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
+              // Create unique key to avoid duplicates - include variant to distinguish different forms
+              const entryVariant = entry.part.v?.var || entry.part.n?.var || entry.part.adj?.var || entry.part.pron?.var || 0;
+              const key = `${stem}-${entry.part.pofs}-${entryVariant}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
               if (!seen.has(key)) {
                 seen.add(key);
                 const parse = new ParseRecord();
@@ -400,15 +403,30 @@ export class WordAnalyzer {
     if (parseRecord.dictEntry.part.pofs === PartOfSpeech.N) {
       output += `${parseRecord.dictEntry.part.n.decl} ${parseRecord.dictEntry.part.n.var || 1} `;
     } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.V) {
-      output += `${parseRecord.dictEntry.part.v.con} ${parseRecord.dictEntry.part.v.var || 1} `;
+      // Special handling for 3rd conjugation variant 4 - display as "4 1"
+      if (parseRecord.dictEntry.part.v.con === 3 && parseRecord.dictEntry.part.v.var === 4) {
+        output += `4 1 `;
+      } else {
+        output += `${parseRecord.dictEntry.part.v.con} ${parseRecord.dictEntry.part.v.var || 1} `;
+      }
     } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.ADJ) {
       output += `${parseRecord.dictEntry.part.adj.decl} ${parseRecord.dictEntry.part.adj.var || 1} `;
     } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.PRON) {
       output += `${parseRecord.dictEntry.part.pron.decl} ${parseRecord.dictEntry.part.pron.var || 1} `;
     } else if (inflection && inflection.qual.pofs === PartOfSpeech.VPAR && parseRecord.dictEntry.part.pofs === PartOfSpeech.V) {
-      output += `${parseRecord.dictEntry.part.v.con} ${parseRecord.dictEntry.part.v.var || 1} `;
+      // Special handling for 3rd conjugation variant 4 - display as "4 1"
+      if (parseRecord.dictEntry.part.v.con === 3 && parseRecord.dictEntry.part.v.var === 4) {
+        output += `4 1 `;
+      } else {
+        output += `${parseRecord.dictEntry.part.v.con} ${parseRecord.dictEntry.part.v.var || 1} `;
+      }
     } else if (inflection && inflection.qual.pofs === PartOfSpeech.SUPINE && parseRecord.dictEntry.part.pofs === PartOfSpeech.V) {
-      output += `${parseRecord.dictEntry.part.v.con} ${parseRecord.dictEntry.part.v.var || 1} `;
+      // Special handling for 3rd conjugation variant 4 - display as "4 1"
+      if (parseRecord.dictEntry.part.v.con === 3 && parseRecord.dictEntry.part.v.var === 4) {
+        output += `4 1 `;
+      } else {
+        output += `${parseRecord.dictEntry.part.v.con} ${parseRecord.dictEntry.part.v.var || 1} `;
+      }
     }
     
     // Add inflection details
@@ -420,7 +438,12 @@ export class WordAnalyzer {
         output += `${n.cs} ${n.number} ${gender}`.padEnd(25, ' ');
       } else if (inflection.qual.pofs === PartOfSpeech.V) {
         const v = inflection.qual.v;
-        output += `${v.tense} ${v.voice} ${v.mood} ${v.person} ${v.number}`.padEnd(25, ' ');
+        // For deponent verbs, omit voice altogether
+        if (parseRecord.dictEntry.part.v.dep) {
+          output += `${v.tense} ${v.mood} ${v.person} ${v.number}`.padEnd(25, ' ');
+        } else {
+          output += `${v.tense} ${v.voice} ${v.mood} ${v.person} ${v.number}`.padEnd(25, ' ');
+        }
       } else if (inflection.qual.pofs === PartOfSpeech.ADJ) {
         const adj = inflection.qual.adj;
         output += `${adj.cs} ${adj.number} ${adj.gender} ${adj.comp}`.padEnd(25, ' ');
@@ -432,7 +455,9 @@ export class WordAnalyzer {
         output += `${adv.comp || 'POS'}`.padEnd(25, ' ');
       } else if (inflection.qual.pofs === PartOfSpeech.VPAR) {
         const vpar = inflection.qual.vpar;
-        output += `${vpar.cs} ${vpar.number} ${vpar.gender} ${vpar.tense} ${vpar.voice} ${vpar.mood}`.padEnd(25, ' ');
+        // For deponent verbs, show ACTIVE voice even if the participle inflection is PASSIVE
+        const displayVoice = (parseRecord.dictEntry.part.v.dep && vpar.voice === 'PASSIVE') ? 'ACTIVE' : vpar.voice;
+        output += `${vpar.cs} ${vpar.number} ${vpar.gender} ${vpar.tense} ${displayVoice} ${vpar.mood}`.padEnd(25, ' ');
       } else if (inflection.qual.pofs === PartOfSpeech.SUPINE) {
         const supine = inflection.qual.supine;
         output += `${supine.cs} ${supine.number} ${supine.gender}`.padEnd(25, ' ');
@@ -478,33 +503,66 @@ export class WordAnalyzer {
     if (entry.part.pofs === PartOfSpeech.V) {
       // Verb: show principal parts based on conjugation
       const conj = entry.part.v.con;
-      if (conj === 1) {
-        // 1st conjugation: amo, amare, amavi, amatus
-        output += `${stems.stem1.trim()}o, ${stems.stem1.trim()}are`;
-      } else if (conj === 2) {
-        // 2nd conjugation: moneo, monere, monui, monitus
-        output += `${stems.stem1.trim()}eo, ${stems.stem2.trim()}ere`;
-      } else if (conj === 3) {
-        // 3rd conjugation: rego, regere, rexi, rectus
-        output += `${stems.stem1.trim()}o, ${stems.stem2.trim()}ere`;
-      } else if (conj === 4) {
-        // 4th conjugation: audio, audire, audivi, auditus
-        output += `${stems.stem1.trim()}io, ${stems.stem1.trim()}ire`;
+      
+      if (entry.part.v.dep) {
+        // Deponent verb: special forms
+        if (conj === 3 && entry.part.v.var === 1) {
+          // 3rd conjugation deponent: orior, ori
+          output += `${stems.stem1.trim()}or, ${stems.stem1.trim()}`;
+        } else if (conj === 3 && entry.part.v.var === 4) {
+          // 3rd conjugation variant 4: orior, oriri  
+          output += `${stems.stem1.trim()}or, ${stems.stem1.trim()}ri`;
+        } else {
+          // Default deponent pattern
+          output += `${stems.stem1.trim()}or, ${stems.stem2.trim()}`;
+        }
       } else {
-        // Default fallback
-        output += `${stems.stem1.trim()}o, ${stems.stem2.trim()}ere`;
+        // Regular verb
+        if (conj === 1) {
+          // 1st conjugation: amo, amare, amavi, amatus
+          output += `${stems.stem1.trim()}o, ${stems.stem1.trim()}are`;
+        } else if (conj === 2) {
+          // 2nd conjugation: moneo, monere, monui, monitus
+          output += `${stems.stem1.trim()}eo, ${stems.stem2.trim()}ere`;
+        } else if (conj === 3) {
+          // 3rd conjugation: rego, regere, rexi, rectus
+          output += `${stems.stem1.trim()}o, ${stems.stem2.trim()}ere`;
+        } else if (conj === 4) {
+          // 4th conjugation: audio, audire, audivi, auditus
+          output += `${stems.stem1.trim()}io, ${stems.stem1.trim()}ire`;
+        } else {
+          // Default fallback
+          output += `${stems.stem1.trim()}o, ${stems.stem2.trim()}ere`;
+        }
       }
       
-      if (stems.stem3.trim()) {
-        output += `, ${stems.stem3.trim()}i`;
-      }
-      if (stems.stem4.trim()) {
-        output += `, ${stems.stem4.trim()}us`;
+      if (entry.part.v.dep) {
+        // Deponent verb: different principal parts
+        if (stems.stem4.trim()) {
+          output += `, ${stems.stem4.trim()}us sum`;
+        }
+      } else {
+        // Regular verb
+        if (stems.stem3.trim()) {
+          output += `, ${stems.stem3.trim()}i`;
+        }
+        if (stems.stem4.trim()) {
+          output += `, ${stems.stem4.trim()}us`;
+        }
       }
       output += `  V`;
       if (entry.part.v.con) {
-        const conj = ['', '1st', '2nd', '3rd', '3rd', '4th'][entry.part.v.con] || '';
+        let conj;
+        if (entry.part.v.con === 3 && entry.part.v.var === 4) {
+          // 3rd conjugation variant 4 is displayed as 4th conjugation
+          conj = '4th';
+        } else {
+          conj = ['', '1st', '2nd', '3rd', '3rd', '4th'][entry.part.v.con] || '';
+        }
         output += ` (${conj})`;
+        if (entry.part.v.dep) {
+          output += ` DEP`;
+        }
       }
     } else if (entry.part.pofs === PartOfSpeech.N) {
       // Noun: show nom and gen forms

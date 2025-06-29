@@ -21,6 +21,25 @@ export class Dictionary {
       
       const entry = this.parseDictlineLine(line);
       if (entry) {
+        // Check if meaning starts with | - if so, it's a continuation of the previous entry
+        if (entry.mean.startsWith('|')) {
+          if (this.entries.length > 0) {
+            const lastEntry = this.entries[this.entries.length - 1];
+            // Check if it's the same word (same stems and part of speech)
+            if (lastEntry.stems.stem1 === entry.stems.stem1 &&
+                lastEntry.stems.stem2 === entry.stems.stem2 &&
+                lastEntry.stems.stem3 === entry.stems.stem3 &&
+                lastEntry.stems.stem4 === entry.stems.stem4 &&
+                lastEntry.part.pofs === entry.part.pofs &&
+                lastEntry.part.v?.con === entry.part.v?.con &&
+                lastEntry.part.v?.var === entry.part.v?.var) {
+              // Append the meaning to the previous entry (remove the | prefix)
+              lastEntry.mean += '\n' + entry.mean.substring(1);
+              continue; // Don't add as a new entry
+            }
+          }
+        }
+        
         const index = this.entries.length;
         this.entries.push(entry);
         
@@ -86,7 +105,8 @@ export class Dictionary {
       part.pofs = PartOfSpeech.V;
       part.v = {
         con: parseInt(parts[1]) || 0,
-        var: parseInt(parts[2]) || 0
+        var: parseInt(parts[2]) || 0,
+        dep: parts[3] === 'DEP' // Check if it's a deponent verb
       };
     } else if (parts[0] === 'ADJ') {
       part.pofs = PartOfSpeech.ADJ;
@@ -321,6 +341,12 @@ export class Dictionary {
         part: { pofs: PartOfSpeech.ADV, adv: {} },
         tran: { age: 'X', area: 'X', geo: 'X', freq: 'B', source: 'O' },
         mean: 'easily, readily, without difficulty; generally, often; willingly; heedlessly;'
+      },
+      {
+        stems: new StemKey('sequ', 'sequ', 'secut', 'secut'),
+        part: { pofs: PartOfSpeech.V, v: { con: 3, var: 1, dep: true } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
+        mean: 'follow; pursue; conform; imitate; come after; result from; attend;'
       }
     ];
     

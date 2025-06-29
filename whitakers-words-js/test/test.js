@@ -748,4 +748,57 @@ test('amatu supine output format matches expected', () => {
          'SUPINE dict should match expected format');
 });
 
+test('orietur deponent verb with multiple variants', () => {
+  const dict = new Dictionary();
+  dict.loadFromDictline('../DICTLINE.GEN');
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('orietur');
+  assert(results.length >= 2, 'Should find at least 2 variants of orior');
+  
+  // Find both variants
+  const variant1 = results.find(r => r.dictEntry.part.v.var === 1);
+  const variant4 = results.find(r => r.dictEntry.part.v.var === 4);
+  
+  assert(variant1, 'Should find variant 1 (3rd conjugation)');
+  assert(variant4, 'Should find variant 4 (displayed as 4th conjugation)');
+  
+  // Check variant 1 details
+  assert.equal(variant1.dictEntry.part.pofs, 'V', 'Should be verb');
+  assert.equal(variant1.dictEntry.part.v.con, 3, 'Should be 3rd conjugation');
+  assert.equal(variant1.dictEntry.part.v.var, 1, 'Should be variant 1');
+  assert.equal(variant1.dictEntry.part.v.dep, true, 'Should be deponent');
+  assert.equal(variant1.dictEntry.stems.stem4.trim(), 'orit', 'Should have orit stem4');
+  
+  // Check variant 4 details
+  assert.equal(variant4.dictEntry.part.pofs, 'V', 'Should be verb');
+  assert.equal(variant4.dictEntry.part.v.con, 3, 'Should be 3rd conjugation');
+  assert.equal(variant4.dictEntry.part.v.var, 4, 'Should be variant 4');
+  assert.equal(variant4.dictEntry.part.v.dep, true, 'Should be deponent');
+  assert.equal(variant4.dictEntry.stems.stem4.trim(), 'ort', 'Should have ort stem4');
+  
+  // Test inflection line formatting
+  const line1 = analyzer.formatInflectionLine(variant1);
+  const line4 = analyzer.formatInflectionLine(variant4);
+  
+  // Check that variant 1 shows as "V 3 1" and variant 4 shows as "V 4 1"
+  assert(line1.match(/^ori\.etur\s+V\s+3\s+1\s+FUT\s+IND\s+3\s+S/), 
+         'Variant 1 should show V 3 1 FUT IND 3 S');
+  assert(line4.match(/^ori\.etur\s+V\s+4\s+1\s+FUT\s+IND\s+3\s+S/), 
+         'Variant 4 should show V 4 1 FUT IND 3 S');
+  
+  // Test dictionary form formatting
+  const dict1 = analyzer.formatDictionaryForm(variant1);
+  const dict4 = analyzer.formatDictionaryForm(variant4);
+  
+  // Check that both show DEP flag
+  assert(dict1.includes('V (3rd) DEP'), 'Variant 1 should show (3rd) DEP');
+  assert(dict4.includes('V (4th) DEP'), 'Variant 4 should show (4th) DEP');
+  
+  // Check principal parts
+  assert(dict1.includes('orior, ori, oritus sum'), 'Variant 1 should have orior, ori, oritus sum');
+  assert(dict4.includes('orior, oriri, ortus sum'), 'Variant 4 should have orior, oriri, ortus sum');
+});
+
 console.log('All tests completed!');
