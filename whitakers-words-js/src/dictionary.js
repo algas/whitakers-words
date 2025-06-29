@@ -353,6 +353,24 @@ export class Dictionary {
         part: { pofs: PartOfSpeech.PREP, prep: { obj: 'ABL' } },
         tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
         mean: 'by (agent), from (departure, cause, remote origin/time); after (reference);'
+      },
+      {
+        stems: new StemKey('sin', 'sin'),
+        part: { pofs: PartOfSpeech.N, n: { decl: 2, var: 1, gender: 'M' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
+        mean: 'bowl for serving wine, etc;'
+      },
+      {
+        stems: new StemKey('sin', 'sin', 'siv', 'sit'),
+        part: { pofs: PartOfSpeech.V, v: { con: 3, var: 1 } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
+        mean: 'allow, permit;'
+      },
+      {
+        stems: new StemKey('sine'),
+        part: { pofs: PartOfSpeech.PREP, prep: { obj: 'ABL' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
+        mean: 'without; (sometimes after object); lack; [Johannis sine Terra => John Lackland];'
       }
     ];
     

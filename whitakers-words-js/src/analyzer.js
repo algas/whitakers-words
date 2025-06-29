@@ -16,15 +16,9 @@ export class WordAnalyzer {
     const exactMatches = this.findExactMatches(word);
     results.push(...exactMatches);
     
-    // Skip inflection matching for strictly indeclinable words that have exact matches
-    const hasStrictlyIndeclinableMatch = exactMatches.some(m => 
-      [PartOfSpeech.PREP, PartOfSpeech.CONJ, PartOfSpeech.INTERJ].includes(m.dictEntry.part.pofs) ||
-      (m.dictEntry.part.pofs === PartOfSpeech.PRON && m.dictEntry.part.pron.decl === 5));
-    
-    if (!hasStrictlyIndeclinableMatch) {
-      const inflectionMatches = this.findInflectionMatches(word);
-      results.push(...inflectionMatches);
-    }
+    // Always try inflection matching for completeness
+    const inflectionMatches = this.findInflectionMatches(word);
+    results.push(...inflectionMatches);
     
     // Try tricks (special cases)
     const trickMatches = this.applyTricks(word);

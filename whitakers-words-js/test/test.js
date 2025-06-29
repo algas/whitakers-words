@@ -89,23 +89,73 @@ test('Exact match for prepositions - ab', () => {
   const analyzer = new WordAnalyzer(dict, inflDb);
   
   const results = analyzer.analyze('ab');
-  assert(results.length === 1, 'Should parse "ab" with exactly one result');
+  assert(results.length >= 1, 'Should parse "ab" with at least one result');
   
-  const result = results[0];
-  assert.equal(result.dictEntry.part.pofs, 'PREP', 'Should be a preposition');
-  assert.equal(result.dictEntry.part.prep.obj, 'ABL', 'Should take ablative case');
-  assert(result.dictEntry.mean.includes('by (agent)'), 'Should mean "by (agent)"');
+  // Find the preposition result (there might be multiple due to inflection matching)
+  const prepResult = results.find(r => r.dictEntry.part.pofs === 'PREP');
+  assert(prepResult, 'Should find preposition result');
+  assert.equal(prepResult.dictEntry.part.prep.obj, 'ABL', 'Should take ablative case');
+  assert(prepResult.dictEntry.mean.includes('by (agent)'), 'Should mean "by (agent)"');
   
   // Test output formatting
-  const inflectionLine = analyzer.formatInflectionLine(result);
+  const inflectionLine = analyzer.formatInflectionLine(prepResult);
   assert(inflectionLine.includes('ab'), 'Should contain "ab"');
   assert(inflectionLine.includes('PREP'), 'Should contain "PREP"');
   assert(inflectionLine.includes('ABL'), 'Should contain "ABL"');
   assert(inflectionLine.match(/ab\s+PREP\s+ABL/), 'Should have correct spacing');
   
-  const dictForm = analyzer.formatDictionaryForm(result);
+  const dictForm = analyzer.formatDictionaryForm(prepResult);
   assert(dictForm.includes('ab  PREP  ABL'), 'Dictionary form should show "ab  PREP  ABL"');
   assert(dictForm.includes('[XXXAO]'), 'Should include frequency code');
+});
+
+test('Multiple part of speech analysis - sine', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('sine');
+  assert(results.length >= 3, 'Should parse "sine" with at least 3 results (noun, verb, preposition)');
+  
+  // Check for noun result (sin.e from sinus, VOC S M)
+  const nounResult = results.find(r => 
+    r.dictEntry.part.pofs === 'N' && 
+    r.inflection && 
+    r.inflection.qual.n && 
+    r.inflection.qual.n.cs === 'VOC');
+  assert(nounResult, 'Should find noun vocative result');
+  assert.equal(nounResult.dictEntry.part.n.decl, 2, 'Should be 2nd declension');
+  assert.equal(nounResult.dictEntry.part.n.gender, 'M', 'Should be masculine');
+  assert(nounResult.dictEntry.mean.includes('bowl'), 'Should mean "bowl"');
+  
+  // Check for verb result (sin.e from sino, IMP 2 S)
+  const verbResult = results.find(r => 
+    r.dictEntry.part.pofs === 'V' && 
+    r.inflection && 
+    r.inflection.qual.v && 
+    r.inflection.qual.v.mood === 'IMP');
+  assert(verbResult, 'Should find verb imperative result');
+  assert.equal(verbResult.dictEntry.part.v.con, 3, 'Should be 3rd conjugation');
+  assert(verbResult.dictEntry.mean.includes('allow'), 'Should mean "allow"');
+  
+  // Check for preposition result
+  const prepResult = results.find(r => r.dictEntry.part.pofs === 'PREP');
+  assert(prepResult, 'Should find preposition result');
+  assert.equal(prepResult.dictEntry.part.prep.obj, 'ABL', 'Should take ablative case');
+  assert(prepResult.dictEntry.mean.includes('without'), 'Should mean "without"');
+  
+  // Test output formatting for each type
+  const nounInflectionLine = analyzer.formatInflectionLine(nounResult);
+  assert(nounInflectionLine.includes('sin.e'), 'Noun line should contain "sin.e"');
+  assert(nounInflectionLine.includes('VOC S M'), 'Noun line should show VOC S M');
+  
+  const verbInflectionLine = analyzer.formatInflectionLine(verbResult);
+  assert(verbInflectionLine.includes('sin.e'), 'Verb line should contain "sin.e"');
+  assert(verbInflectionLine.includes('IMP'), 'Verb line should show IMP');
+  
+  const prepInflectionLine = analyzer.formatInflectionLine(prepResult);
+  assert(prepInflectionLine.includes('sine'), 'Prep line should contain "sine"');
+  assert(prepInflectionLine.includes('PREP'), 'Prep line should contain "PREP"');
 });
 
 test('Macron handling', () => {

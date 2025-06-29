@@ -133,7 +133,7 @@ function processWord(word) {
       }
       
       // Sort groups by part of speech, then by gender (F before N), then by declension
-      const sortedGroups = Array.from(grouped.entries()).sort(([keyA, groupA], [keyB, groupB]) => {
+      const sortedGroups = Array.from(grouped.entries()).sort(([, groupA], [, groupB]) => {
         const entryA = groupA[0].dictEntry;
         const entryB = groupB[0].dictEntry;
         const inflectionA = groupA[0].inflection;
@@ -173,7 +173,7 @@ function processWord(word) {
       });
       
       // Output each group
-      for (const [key, group] of sortedGroups) {
+      for (const [, group] of sortedGroups) {
         // Sort inflection forms by case order - ABL first for feminine entry, then standard order for neuter
         const dictEntry = group[0].dictEntry;
         let caseOrder;
@@ -219,10 +219,7 @@ function processWord(word) {
         console.log(group[0].dictEntry.mean);
       }
       
-      // Add separator if multiple entries
-      if (grouped.size > 1) {
-        console.log('*');
-      }
+      // Note: removed asterisk separator to match expected output format
     }
   }
 }
