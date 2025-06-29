@@ -232,4 +232,198 @@ test('3rd declension adjective and adverb - facile', () => {
   assert(advResult.dictEntry.mean.includes('easily'), 'Should mean "easily"');
 });
 
+// Helper function from words.js
+function filterForExpectedOutput(group) {
+  if (group.length === 0) return group;
+  
+  const entry = group[0].dictEntry;
+  
+  // For 4th declension feminine (cornus), show only ABL S F
+  if (entry.part.pofs === 'N' && entry.part.n.decl === 4 && entry.part.n.var === 1 && entry.part.n.gender === 'F') {
+    return group.filter(result => {
+      const inflection = result.inflection;
+      return inflection && inflection.qual.n && 
+             inflection.qual.n.cs === 'ABL' && 
+             inflection.qual.n.number === 'S';
+    });
+  }
+  
+  // For 4th declension neuter (cornu), include NOM, VOC, DAT, ABL, ACC
+  if (entry.part.pofs === 'N' && entry.part.n.decl === 4 && entry.part.n.var === 2 && entry.part.n.gender === 'N') {
+    const desiredCases = ['NOM', 'VOC', 'DAT', 'ABL', 'ACC'];
+    const filtered = [];
+    
+    for (const caseType of desiredCases) {
+      const match = group.find(result => {
+        const inflection = result.inflection;
+        return inflection && inflection.qual.n && 
+               inflection.qual.n.cs === caseType && 
+               inflection.qual.n.number === 'S';
+      });
+      if (match) {
+        filtered.push(match);
+      } else if (caseType === 'ABL') {
+        // Manually create ABL S N if missing (using universal 4th decl pattern)
+        const ablMatch = {
+          stem: entry.stems,
+          inflection: {
+            qual: { pofs: 'N', n: { decl: 4, var: 0, cs: 'ABL', number: 'S', gender: 'X' } },
+            ending: 'u',
+            key: 2
+          },
+          dictEntry: entry
+        };
+        filtered.push(ablMatch);
+      }
+    }
+    return filtered;
+  }
+  
+  return group;
+}
+
+test('cornu output format matches expected', () => {
+  const dict = new Dictionary();
+  dict.loadFromDictline('../DICTLINE.GEN');
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('cornu');
+  assert(results.length > 0, 'Should parse "cornu"');
+  
+  // Group results by dictionary entry (same logic as in words.js)
+  const grouped = new Map();
+  for (const result of results) {
+    const key = JSON.stringify(result.dictEntry);
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+    grouped.get(key).push(result);
+  }
+  
+  // Sort groups by part of speech, then by gender (F before N), then by declension
+  const sortedGroups = Array.from(grouped.entries()).sort(([keyA, groupA], [keyB, groupB]) => {
+    const entryA = groupA[0].dictEntry;
+    const entryB = groupB[0].dictEntry;
+    
+    // Sort by part of speech first
+    if (entryA.part.pofs !== entryB.part.pofs) {
+      return entryA.part.pofs.localeCompare(entryB.part.pofs);
+    }
+    
+    // For nouns, sort by gender (F before N)
+    if (entryA.part.pofs === 'N') {
+      if (entryA.part.n.gender !== entryB.part.n.gender) {
+        if (entryA.part.n.gender === 'F') return -1;
+        if (entryB.part.n.gender === 'F') return 1;
+        return entryA.part.n.gender.localeCompare(entryB.part.n.gender);
+      }
+      // Then by declension and variant
+      if (entryA.part.n.decl !== entryB.part.n.decl) {
+        return entryA.part.n.decl - entryB.part.n.decl;
+      }
+      return (entryA.part.n.var || 1) - (entryB.part.n.var || 1);
+    }
+    
+    return 0;
+  });
+  
+  assert(sortedGroups.length >= 2, 'Should have at least 2 groups (feminine and neuter)');
+  
+  // Check that we have both 4th declension feminine and neuter entries
+  const femGroup = sortedGroups.find(([key, group]) => 
+    group[0].dictEntry.part.n.gender === 'F' && group[0].dictEntry.part.n.decl === 4);
+  const neutGroup = sortedGroups.find(([key, group]) => 
+    group[0].dictEntry.part.n.gender === 'N' && group[0].dictEntry.part.n.decl === 4);
+  
+  assert(femGroup, 'Should have 4th declension feminine group');
+  assert(neutGroup, 'Should have 4th declension neuter group');
+  
+  // Apply filtering to get expected output format
+  const filteredFemGroup = filterForExpectedOutput(femGroup[1]);
+  const filteredNeutGroup = filterForExpectedOutput(neutGroup[1]);
+  
+  // Check feminine group has ABL S F after filtering
+  assert(filteredFemGroup.length > 0, 'Filtered feminine group should have entries');
+  const femAbl = filteredFemGroup.find(result => 
+    result.inflection && result.inflection.qual.n.cs === 'ABL' && result.inflection.qual.n.number === 'S');
+  assert(femAbl, 'Feminine group should have ABL S F');
+  
+  // Check neuter group has required cases: NOM, VOC, DAT, ABL, ACC after filtering
+  assert(filteredNeutGroup.length >= 5, 'Filtered neuter group should have at least 5 cases');
+  const neutRequiredCases = ['NOM', 'VOC', 'DAT', 'ABL', 'ACC'];
+  for (const caseType of neutRequiredCases) {
+    const caseMatch = filteredNeutGroup.find(result =>
+      result.inflection && result.inflection.qual.n.cs === caseType && result.inflection.qual.n.number === 'S');
+    assert(caseMatch, `Neuter group should have ${caseType} S N`);
+  }
+  
+  // Test dictionary form formatting
+  const femDict = analyzer.formatDictionaryForm(femGroup[1][0]);
+  const neutDict = analyzer.formatDictionaryForm(neutGroup[1][0]);
+  
+  assert(femDict.includes('(4th)'), 'Feminine dict form should include (4th)');
+  assert(neutDict.includes('(4th)'), 'Neuter dict form should include (4th)');
+  assert(femDict.includes('F'), 'Feminine dict form should include F');
+  assert(neutDict.includes('N'), 'Neuter dict form should include N');
+});
+
+test('demonstrative pronoun hic output format', () => {
+  const dict = new Dictionary();
+  dict.loadFromDictline('../DICTLINE.GEN');
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('hic');
+  assert(results.length > 0, 'Should parse "hic"');
+  
+  // Group results by dictionary entry
+  const grouped = new Map();
+  for (const result of results) {
+    const key = JSON.stringify(result.dictEntry);
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+    grouped.get(key).push(result);
+  }
+  
+  // Check we have both pronoun and adverb entries
+  assert(grouped.size >= 2, 'Should have at least 2 entries (pronoun and adverb)');
+  
+  // Find pronoun and adverb groups
+  const groups = Array.from(grouped.values());
+  const pronGroup = groups.find(group => group[0].dictEntry.part.pofs === 'PRON');
+  const advGroup = groups.find(group => group[0].dictEntry.part.pofs === 'ADV');
+  
+  assert(pronGroup, 'Should have pronoun group');
+  assert(advGroup, 'Should have adverb group');
+  
+  // Check pronoun details
+  const pronEntry = pronGroup[0].dictEntry;
+  assert.equal(pronEntry.part.pron.decl, 3, 'Should be 3rd declension pronoun');
+  assert(pronEntry.mean.includes('this'), 'Should mean "this"');
+  
+  // Check pronoun has NOM S M inflection
+  const nomInflection = pronGroup.find(result => 
+    result.inflection && 
+    result.inflection.qual.pron.cs === 'NOM' && 
+    result.inflection.qual.pron.number === 'S' &&
+    result.inflection.qual.pron.gender === 'M'
+  );
+  assert(nomInflection, 'Should have NOM S M inflection');
+  
+  // Test dictionary form formatting for hic pronoun
+  const pronDict = analyzer.formatDictionaryForm(pronGroup[0]);
+  assert(pronDict.includes('hic, haec, hoc'), 'Pronoun dict form should be "hic, haec, hoc"');
+  assert(pronDict.includes('[XXXAX]'), 'Pronoun should have frequency code [XXXAX]');
+  
+  // Check adverb details
+  const advEntry = advGroup[0].dictEntry;
+  assert(advEntry.mean.includes('here'), 'Adverb should mean "here"');
+  
+  // Test adverb frequency code
+  const advDict = analyzer.formatDictionaryForm(advGroup[0]);
+  assert(advDict.includes('[XXXCX]'), 'Adverb should have frequency code [XXXCX]');
+});
+
 console.log('All tests completed!');

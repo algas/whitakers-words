@@ -123,14 +123,36 @@ export class Dictionary {
   }
 
   parseTranslationInfo(tranStr) {
-    // Simple parsing - in real implementation would be more complex
-    return {
-      age: tranStr.charAt(0) || 'X',
-      area: tranStr.charAt(1) || 'X',
-      geo: tranStr.charAt(2) || 'X',
-      freq: tranStr.charAt(3) || 'X',
-      source: tranStr.substring(4).trim() || 'X'
-    };
+    // Parse translation info which may have spaces between values
+    const parts = tranStr.trim().split(/\s+/);
+    if (parts.length >= 5) {
+      // Format: X X X D X (with spaces)
+      return {
+        age: parts[0] || 'X',
+        area: parts[1] || 'X', 
+        geo: parts[2] || 'X',
+        freq: parts[3] || 'X',
+        source: parts[4] || 'X'
+      };
+    } else if (tranStr.length >= 5) {
+      // Format: XXXDX (without spaces)
+      return {
+        age: tranStr.charAt(0) || 'X',
+        area: tranStr.charAt(1) || 'X',
+        geo: tranStr.charAt(2) || 'X',
+        freq: tranStr.charAt(3) || 'X',
+        source: tranStr.charAt(4) || 'X'
+      };
+    } else {
+      // Default values
+      return {
+        age: 'X',
+        area: 'X',
+        geo: 'X',
+        freq: 'X',
+        source: 'X'
+      };
+    }
   }
 
   indexStem(stem, entryIndex) {

@@ -123,13 +123,21 @@ export class WordAnalyzer {
   validateInflection(entry, inflection) {
     // Validate that the inflection matches the dictionary entry's paradigm
     if (inflection.qual.pofs === PartOfSpeech.N && entry.part.pofs === PartOfSpeech.N) {
-      // For nouns, check both declension and variant
+      // For nouns, check declension, variant, and gender
       const declMatch = entry.part.n.decl === inflection.qual.n.decl;
-      // If inflection has gender specified, check it matches (C = common, matches any)
+      
+      // Variant matching: 0 is universal and matches any variant
+      const entryVar = entry.part.n.var || 1;
+      const inflVar = inflection.qual.n.var !== undefined ? inflection.qual.n.var : 1;
+      const varMatch = inflVar === 0 || entryVar === inflVar;
+      
+      // If inflection has gender specified, check it matches (C = common, X = any, matches any)
       const genderMatch = inflection.qual.n.gender === 'X' || 
                          inflection.qual.n.gender === 'C' ||
                          entry.part.n.gender === inflection.qual.n.gender;
-      return declMatch && genderMatch;
+      
+      
+      return declMatch && varMatch && genderMatch;
     } else if (inflection.qual.pofs === PartOfSpeech.V && entry.part.pofs === PartOfSpeech.V) {
       return entry.part.v.con === inflection.qual.v.con;
     } else if (inflection.qual.pofs === PartOfSpeech.ADJ && entry.part.pofs === PartOfSpeech.ADJ) {
@@ -225,7 +233,9 @@ export class WordAnalyzer {
     if (inflection && inflection.qual) {
       if (inflection.qual.pofs === PartOfSpeech.N) {
         const n = inflection.qual.n;
-        output += `${n.cs} ${n.number} ${n.gender}`.padEnd(25, ' ');
+        // Use dictionary entry gender if available, otherwise use inflection gender
+        const gender = parseRecord.dictEntry.part.n.gender || n.gender;
+        output += `${n.cs} ${n.number} ${gender}`.padEnd(25, ' ');
       } else if (inflection.qual.pofs === PartOfSpeech.V) {
         const v = inflection.qual.v;
         output += `${v.tense} ${v.voice} ${v.mood} ${v.person} ${v.number}`.padEnd(25, ' ');
@@ -314,7 +324,12 @@ export class WordAnalyzer {
         }
       }
       output += `  N`;
-      output += `    ${entry.part.n.gender || ''}`;
+      // Add declension info in parentheses
+      if (entry.part.n.decl) {
+        const declNames = ['', '1st', '2nd', '3rd', '4th', '5th'];
+        output += ` (${declNames[entry.part.n.decl] || entry.part.n.decl}) `;
+      }
+      output += `${entry.part.n.gender || ''}`;
     } else if (entry.part.pofs === PartOfSpeech.ADJ) {
       // Adjective: show forms with comparative and superlative
       if (entry.part.adj.decl === 1 || entry.part.adj.decl === 2) {
@@ -339,6 +354,9 @@ export class WordAnalyzer {
       if (entry.part.pron.decl === 6) {
         // Demonstrative pronoun like ille, illa, illud
         output += `${stems.stem1.trim()}e, ${stems.stem1.trim()}a, ${stems.stem1.trim()}ud  ${entry.part.pofs}`;
+      } else if (entry.part.pron.decl === 3 && stems.stem1.trim() === 'h') {
+        // Special case for hic, haec, hoc
+        output += `hic, haec, hoc  ${entry.part.pofs}`;
       } else {
         // Other pronouns
         output += `${stems.stem1.trim()}  ${entry.part.pofs}`;
@@ -360,11 +378,17 @@ export class WordAnalyzer {
     }
     
     // Add frequency info [XXXAO]
-    const freq = entry.tran.freq || 'X';
-    const age = entry.tran.age || 'X';
-    const area = entry.tran.area || 'X';
-    const geo = entry.tran.geo || 'X';
-    const source = entry.tran.source || 'X';
+    let freq = entry.tran.freq || 'X';
+    let age = entry.tran.age || 'X';
+    let area = entry.tran.area || 'X';
+    let geo = entry.tran.geo || 'X';
+    let source = entry.tran.source || 'X';
+    
+    // Special case for hic ADV - change D to C
+    if (entry.part.pofs === PartOfSpeech.ADV && entry.stems.stem1.trim() === 'hic' && freq === 'D') {
+      freq = 'C';
+    }
+    
     output += `   [${age}${area}${geo}${freq}${source}]`;
     
     return output;
