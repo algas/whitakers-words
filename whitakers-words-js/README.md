@@ -8,6 +8,7 @@ A JavaScript implementation of William Whitaker's WORDS Latin-English dictionary
 - English to Latin lookup
 - Support for inflected forms (nouns, verbs, adjectives)
 - Recognition of prefixes and enclitics
+- Macron handling (automatically converts ā, ē, ī, ō, ū to a, e, i, o, u)
 - Interactive and batch processing modes
 
 ## Installation
@@ -43,10 +44,30 @@ node bin/words.js -e love girl good
 node bin/words.js -f latin_text.txt
 ```
 
-### Using Full Dictionary
+### Using Original Data Files
 
 ```bash
+# Use original inflection data
+node bin/words.js -I ../INFLECTS.LAT amat
+
+# Use original dictionary
 node bin/words.js -d ../DICTLINE.GEN amat
+
+# Use both (full compatibility)
+node bin/words.js -d ../DICTLINE.GEN -I ../INFLECTS.LAT amat
+```
+
+### Using Full Dictionary and Inflections
+
+```bash
+# Use full dictionary
+node bin/words.js -d ../DICTLINE.GEN amat
+
+# Use real inflection data from INFLECTS.LAT
+node bin/words.js -I ../INFLECTS.LAT amat
+
+# Use both full dictionary and inflections
+node bin/words.js -d ../DICTLINE.GEN -I ../INFLECTS.LAT amat
 ```
 
 ## Examples
@@ -55,22 +76,27 @@ node bin/words.js -d ../DICTLINE.GEN amat
 > node bin/words.js amat
 Using sample dictionary (specify -d DICTLINE.GEN for full dictionary)
 
-amat:
-am.am.amat.amat     V 1     PRES ACTIVE IND 3 S
+am.at                V      1 1 PRES ACTIVE IND 3 S      
+amo, amare, amati, amatus  V (1st)   [XXXAX]
 love, like; fall in love with; be fond of; have a tendency to
 
 > node bin/words.js puella
 Using sample dictionary (specify -d DICTLINE.GEN for full dictionary)
 
-puella:
-puell.puell     N 1 F     NOM S F
-girl, (female) child; maiden; young woman; sweetheart
+puell.a              N      1 1 NOM S F                 
+puell.a              N      1 1 VOC S F                 
+puell.a              N      1 1 ABL S F                 
+puella, puellae  N (1st) F   [XXXBO]  
+girl, (female) child/daughter; maiden; young woman/wife; sweetheart; slavegirl;
 
-puell.puell     N 1 F     VOC S F
-girl, (female) child; maiden; young woman; sweetheart
+> node bin/words.js mōrēs
+Using sample dictionary (specify -d DICTLINE.GEN for full dictionary)
 
-puell.puell     N 1 F     ABL S F
-girl, (female) child; maiden; young woman; sweetheart
+mor.es               N      3 1 NOM P M                  
+mor.es               N      3 1 VOC P M                  
+mor.es               N      3 1 ACC P M                  
+mor, moris  N (3rd) M   [XXXAO]
+customs, character, behavior, manners; morals; mode/way of life; conduct;
 ```
 
 ## Running Tests

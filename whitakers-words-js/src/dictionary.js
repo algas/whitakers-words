@@ -216,13 +216,55 @@ export class Dictionary {
         stems: new StemKey('in'),
         part: { pofs: PartOfSpeech.PREP, prep: { obj: 'ABL' } },
         tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
-        mean: 'in, on, at; in accordance with/regard to/the case of; within'
+        mean: 'in, on, at (space); in accordance with/regard to/the case of; within (time);'
       },
       {
         stems: new StemKey('in'),
         part: { pofs: PartOfSpeech.PREP, prep: { obj: 'ACC' } },
         tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
-        mean: 'into; about, in the mist of; according to, after; for; to, among'
+        mean: 'into; about, in the mist of; according to, after (manner); for; to, among;'
+      },
+      {
+        stems: new StemKey('mor', 'mor'),
+        part: { pofs: PartOfSpeech.N, n: { decl: 3, var: 1, gender: 'M' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
+        mean: 'customs, character, behavior, manners; morals; mode/way of life; conduct;'
+      },
+      {
+        stems: new StemKey('agricol', 'agricol'),
+        part: { pofs: PartOfSpeech.N, n: { decl: 1, var: 1, gender: 'M' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'B', source: 'O' },
+        mean: 'farmer, cultivator, gardener, agriculturist; plowman; farming'
+      },
+      {
+        stems: new StemKey('femin', 'femin'),
+        part: { pofs: PartOfSpeech.N, n: { decl: 1, var: 1, gender: 'F' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
+        mean: 'woman; female'
+      },
+      {
+        stems: new StemKey('ego', 'me'),
+        part: { pofs: PartOfSpeech.PRON, pron: { decl: 5, var: 1 } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
+        mean: 'I, me (PERS); myself (REFLEX);'
+      },
+      {
+        stems: new StemKey('corn', 'corn'),
+        part: { pofs: PartOfSpeech.N, n: { decl: 4, var: 1, gender: 'F' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'C', source: 'O' },
+        mean: 'cornel-cherry-tree (Cornus mas); cornel wood; javelin (of cornel wood);'
+      },
+      {
+        stems: new StemKey('corn', 'corn'),
+        part: { pofs: PartOfSpeech.N, n: { decl: 4, var: 2, gender: 'N' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
+        mean: 'horn; hoof; beak/tusk/claw; bow; horn/trumpet; end, wing of army; mountain top;'
+      },
+      {
+        stems: new StemKey('ill', 'ill'),
+        part: { pofs: PartOfSpeech.PRON, pron: { decl: 6, var: 1 } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
+        mean: 'that; those (pl.); also DEMONST; that person/thing; the well known; the former;'
       }
     ];
     
