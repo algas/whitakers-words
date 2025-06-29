@@ -2,6 +2,36 @@ import { PartOfSpeech, ParseRecord } from './types.js';
 import { InflectionDatabase } from './inflections.js';
 import { Dictionary } from './dictionary.js';
 
+// Roman numeral utilities
+function isRomanNumeral(word) {
+  // Check if the word consists only of valid Roman numeral characters
+  return /^[IVXLCDM]+$/i.test(word);
+}
+
+function romanToArabic(roman) {
+  const romanNumerals = {
+    'I': 1, 'V': 5, 'X': 10, 'L': 50, 
+    'C': 100, 'D': 500, 'M': 1000
+  };
+  
+  let result = 0;
+  roman = roman.toUpperCase();
+  
+  for (let i = 0; i < roman.length; i++) {
+    const current = romanNumerals[roman[i]];
+    const next = romanNumerals[roman[i + 1]];
+    
+    if (next && current < next) {
+      result += next - current;
+      i++; // Skip the next character as we've processed it
+    } else {
+      result += current;
+    }
+  }
+  
+  return result;
+}
+
 export class WordAnalyzer {
   constructor(dictionary, inflectionDb) {
     this.dictionary = dictionary || Dictionary.createSampleDictionary();
@@ -10,7 +40,17 @@ export class WordAnalyzer {
 
   analyze(word) {
     const results = [];
+    const originalWord = word; // Keep original case for Roman numerals
     word = this.preprocessWord(word);
+    
+    // Check for Roman numerals first (before preprocessing changes case)
+    if (isRomanNumeral(originalWord)) {
+      const romanResult = this.handleRomanNumeral(originalWord);
+      if (romanResult) {
+        results.push(romanResult);
+        return results; // Return only Roman numeral result
+      }
+    }
     
     // Try exact match first
     const exactMatches = this.findExactMatches(word);
@@ -25,6 +65,37 @@ export class WordAnalyzer {
     results.push(...trickMatches);
     
     return results;
+  }
+
+  handleRomanNumeral(romanWord) {
+    // Convert Roman numeral to Arabic number
+    const arabicValue = romanToArabic(romanWord);
+    
+    // Create a synthetic dictionary entry for the Roman numeral
+    const syntheticEntry = {
+      stems: { 
+        stem1: romanWord, 
+        stem2: '', 
+        stem3: '', 
+        stem4: '' 
+      },
+      part: { 
+        pofs: PartOfSpeech.NUM, 
+        num: { decl: 2, var: 0, sort: 'X' } 
+      },
+      tran: { 
+        age: 'X', area: 'X', geo: 'X', freq: 'X', source: 'X' 
+      },
+      mean: `${arabicValue}  as a ROMAN NUMERAL;`
+    };
+    
+    // Create a parse record
+    const parse = new ParseRecord();
+    parse.stem = syntheticEntry.stems;
+    parse.dictEntry = syntheticEntry;
+    parse.inflection = null; // Roman numerals are indeclinable
+    
+    return parse;
   }
 
   preprocessWord(word) {

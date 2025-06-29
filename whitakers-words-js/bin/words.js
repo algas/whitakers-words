@@ -214,8 +214,14 @@ function processWord(word) {
             console.log(analyzer.formatInflectionLine(result));
           }
         }
-        // Then output dictionary form and meaning once
-        console.log(analyzer.formatDictionaryForm(group[0]));
+        // Check if it's a Roman numeral (synthetic entry)
+        const isRomanNumeral = group[0].dictEntry.mean.includes('as a ROMAN NUMERAL');
+        
+        if (!isRomanNumeral) {
+          // For regular words, output dictionary form and meaning
+          console.log(analyzer.formatDictionaryForm(group[0]));
+        }
+        
         // Clean up pipe characters from continuation lines in meanings
         const cleanMeaning = group[0].dictEntry.mean.replace(/\n\|+/g, '\n').replace(/^\|+/, '');
         console.log(cleanMeaning);

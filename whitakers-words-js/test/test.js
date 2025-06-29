@@ -243,6 +243,100 @@ test('Numeral analysis - septem', () => {
   assert(!numResult.inflection, 'Numeral should not have inflection info (indeclinable)');
 });
 
+test('Roman numeral analysis - VII', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('VII');
+  assert.equal(results.length, 1, 'Should parse "VII" with exactly 1 result');
+  
+  // Check for Roman numeral result
+  const romanResult = results[0];
+  assert.equal(romanResult.dictEntry.part.pofs, 'NUM', 'Should be a numeral');
+  assert.equal(romanResult.dictEntry.part.num.decl, 2, 'Should be 2nd declension');
+  assert.equal(romanResult.dictEntry.part.num.var, 0, 'Should have variant 0');
+  assert.equal(romanResult.dictEntry.part.num.sort, 'X', 'Should have sort X');
+  assert.equal(romanResult.dictEntry.stems.stem1, 'VII', 'Should preserve original Roman numeral');
+  assert(romanResult.dictEntry.mean.includes('7'), 'Should include Arabic number 7');
+  assert(romanResult.dictEntry.mean.includes('as a ROMAN NUMERAL'), 'Should identify as Roman numeral');
+  
+  // Test output formatting
+  const inflectionLine = analyzer.formatInflectionLine(romanResult);
+  assert(inflectionLine.includes('VII'), 'Should contain "VII"');
+  assert(inflectionLine.includes('NUM'), 'Should contain "NUM"');
+  assert(inflectionLine.includes('2 0 X'), 'Should show declension info "2 0 X"');
+  assert(inflectionLine.includes('X X CARD'), 'Should show "X X CARD"');
+  
+  // Test that it's treated as indeclinable
+  assert(!romanResult.inflection, 'Roman numeral should not have inflection info (indeclinable)');
+});
+
+test('Roman numeral conversion accuracy', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  // Test various Roman numerals
+  const testCases = [
+    { roman: 'I', arabic: 1 },
+    { roman: 'IV', arabic: 4 },
+    { roman: 'V', arabic: 5 },
+    { roman: 'VII', arabic: 7 },
+    { roman: 'IX', arabic: 9 },
+    { roman: 'X', arabic: 10 },
+    { roman: 'XL', arabic: 40 },
+    { roman: 'L', arabic: 50 },
+    { roman: 'XC', arabic: 90 },
+    { roman: 'C', arabic: 100 },
+    { roman: 'CD', arabic: 400 },
+    { roman: 'D', arabic: 500 },
+    { roman: 'CM', arabic: 900 },
+    { roman: 'M', arabic: 1000 },
+    { roman: 'MCMXC', arabic: 1990 }
+  ];
+  
+  testCases.forEach(({ roman, arabic }) => {
+    const results = analyzer.analyze(roman);
+    assert.equal(results.length, 1, `Should parse "${roman}" with exactly 1 result`);
+    assert(results[0].dictEntry.mean.includes(arabic.toString()), `Should convert "${roman}" to ${arabic}`);
+  });
+});
+
+test('Roman numeral case insensitivity', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  // Test that both uppercase and lowercase work
+  const upperResult = analyzer.analyze('VII');
+  const lowerResult = analyzer.analyze('vii');
+  
+  assert.equal(upperResult.length, 1, 'Should parse uppercase "VII"');
+  assert.equal(lowerResult.length, 1, 'Should parse lowercase "vii"');
+  
+  // Both should convert to the same value
+  assert(upperResult[0].dictEntry.mean.includes('7'), 'Uppercase should convert to 7');
+  assert(lowerResult[0].dictEntry.mean.includes('7'), 'Lowercase should convert to 7');
+  
+  // Original case should be preserved in the stem
+  assert.equal(upperResult[0].dictEntry.stems.stem1, 'VII', 'Should preserve uppercase');
+  assert.equal(lowerResult[0].dictEntry.stems.stem1, 'vii', 'Should preserve lowercase');
+});
+
+test('Non-Roman numeral should not be recognized', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  // Test that regular words are not treated as Roman numerals
+  const results = analyzer.analyze('septem');
+  
+  // Should not be treated as Roman numeral (should have regular dictionary analysis)
+  const hasRomanNumeral = results.some(r => r.dictEntry.mean.includes('as a ROMAN NUMERAL'));
+  assert(!hasRomanNumeral, 'Regular word "septem" should not be treated as Roman numeral');
+});
+
 test('Macron handling', () => {
   const dict = Dictionary.createSampleDictionary();
   const inflDb = new InflectionDatabase('../INFLECTS.LAT');
