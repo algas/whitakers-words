@@ -206,6 +206,43 @@ test('Multiple meanings with different parts of speech - contra', () => {
   assert(prepDictForm.includes('[XXXAO]'), 'Should include frequency code');
 });
 
+test('Numeral analysis - septem', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('septem');
+  assert(results.length >= 1, 'Should parse "septem" with at least 1 result');
+  
+  // Check for numeral result
+  const numResult = results.find(r => r.dictEntry.part.pofs === 'NUM');
+  assert(numResult, 'Should find numeral result');
+  assert.equal(numResult.dictEntry.part.num.decl, 2, 'Should be 2nd declension');
+  assert.equal(numResult.dictEntry.part.num.var, 0, 'Should have variant 0');
+  assert.equal(numResult.dictEntry.part.num.sort, 'X', 'Should have sort X (cardinal)');
+  assert(numResult.dictEntry.mean.includes('7'), 'Should include the number 7');
+  assert(numResult.dictEntry.mean.includes('CARD'), 'Should include CARD reference');
+  
+  // Test output formatting
+  const inflectionLine = analyzer.formatInflectionLine(numResult);
+  assert(inflectionLine.includes('septem'), 'Should contain "septem"');
+  assert(inflectionLine.includes('NUM'), 'Should contain "NUM"');
+  assert(inflectionLine.includes('2 0 X'), 'Should show declension info "2 0 X"');
+  assert(inflectionLine.includes('X X CARD'), 'Should show "X X CARD"');
+  
+  // Test dictionary form formatting
+  const dictForm = analyzer.formatDictionaryForm(numResult);
+  assert(dictForm.includes('septem'), 'Dictionary form should start with "septem"');
+  assert(dictForm.includes('septim -a -um'), 'Should include ordinal form "septim -a -um"');
+  assert(dictForm.includes('septen -ae -a'), 'Should include distributive form "septen -ae -a"');
+  assert(dictForm.includes('sept (n)s'), 'Should include adverbial form "sept (n)s"');
+  assert(dictForm.includes('NUM'), 'Should include part of speech "NUM"');
+  assert(dictForm.includes('[XXXAX]'), 'Should include frequency code');
+  
+  // Test that it's treated as indeclinable (exact match)
+  assert(!numResult.inflection, 'Numeral should not have inflection info (indeclinable)');
+});
+
 test('Macron handling', () => {
   const dict = Dictionary.createSampleDictionary();
   const inflDb = new InflectionDatabase('../INFLECTS.LAT');

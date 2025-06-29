@@ -49,9 +49,9 @@ export class WordAnalyzer {
     const entries = this.dictionary.findByStem(word);
     
     for (const entry of entries) {
-      // Check if it's an indeclinable word (CONJ, PREP, ADV, INTERJ)
+      // Check if it's an indeclinable word (CONJ, PREP, ADV, INTERJ, NUM)
       // Only include pronouns for exact matches if they're special cases like "ego"
-      if ([PartOfSpeech.CONJ, PartOfSpeech.PREP, PartOfSpeech.ADV, PartOfSpeech.INTERJ]
+      if ([PartOfSpeech.CONJ, PartOfSpeech.PREP, PartOfSpeech.ADV, PartOfSpeech.INTERJ, PartOfSpeech.NUM]
           .includes(entry.part.pofs) ||
           (entry.part.pofs === PartOfSpeech.PRON && entry.part.pron.decl === 5)) {
         // Skip adverbs that have comparative/superlative forms when looking up the base form
@@ -409,6 +409,8 @@ export class WordAnalyzer {
       output += `${parseRecord.dictEntry.part.adj.decl} ${parseRecord.dictEntry.part.adj.var || 1} `;
     } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.PRON) {
       output += `${parseRecord.dictEntry.part.pron.decl} ${parseRecord.dictEntry.part.pron.var || 1} `;
+    } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.NUM) {
+      output += `${parseRecord.dictEntry.part.num.decl} ${parseRecord.dictEntry.part.num.var || 0} ${parseRecord.dictEntry.part.num.sort}   `;
     } else if (inflection && inflection.qual.pofs === PartOfSpeech.VPAR && parseRecord.dictEntry.part.pofs === PartOfSpeech.V) {
       // Special handling for 3rd conjugation variant 4 - display as "4 1"
       if (parseRecord.dictEntry.part.v.con === 3 && parseRecord.dictEntry.part.v.var === 4) {
@@ -470,6 +472,10 @@ export class WordAnalyzer {
         } else {
           output += 'POS'.padEnd(40, ' ');
         }
+      } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.NUM) {
+        // For numerals, show X X and the sort (CARD for basic numbers like septem)
+        const sort = parseRecord.dictEntry.part.num.sort === 'X' ? 'CARD' : parseRecord.dictEntry.part.num.sort;
+        output += `X X ${sort}`.padEnd(40, ' ');
       }
     }
     
@@ -648,6 +654,19 @@ export class WordAnalyzer {
       } else {
         output += `${base}  ${entry.part.pofs}`;
       }
+    } else if (entry.part.pofs === PartOfSpeech.NUM) {
+      // Numeral: show forms based on stems
+      output += `${stems.stem1.trim()}`;
+      if (stems.stem2.trim()) {
+        output += `, ${stems.stem2.trim()} -a -um`;
+      }
+      if (stems.stem3.trim()) {
+        output += `, ${stems.stem3.trim()} -ae -a`;
+      }
+      if (stems.stem4.trim()) {
+        output += `, ${stems.stem4.trim()} (n)s`;
+      }
+      output += `  ${entry.part.pofs}`;
     } else {
       // Other parts of speech
       output += `${stems.stem1.trim()}  ${entry.part.pofs}`;

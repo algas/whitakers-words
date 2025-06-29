@@ -202,7 +202,7 @@ function processWord(word) {
         // For indeclinable words (PREP, CONJ, ADV, INTERJ), show only one inflection line
         const filteredGroup = filterForExpectedOutput(sortedGroup);
         if (dictEntry.part.pofs === 'PREP' || dictEntry.part.pofs === 'CONJ' || 
-            dictEntry.part.pofs === 'INTERJ' || 
+            dictEntry.part.pofs === 'INTERJ' || dictEntry.part.pofs === 'NUM' ||
             (dictEntry.part.pofs === 'ADV' && !filteredGroup.some(r => r.inflection?.qual?.adv?.comp))) {
           // For indeclinable words, show only the first result
           if (filteredGroup.length > 0) {

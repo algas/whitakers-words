@@ -383,6 +383,12 @@ export class Dictionary {
         part: { pofs: PartOfSpeech.PREP, prep: { obj: 'ACC' } },
         tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'O' },
         mean: 'against, facing, opposite; weighed against; as against; in resistance/reply to;\ncontrary to, not in conformance with; the reverse of; otherwise than;\ntowards/up to, in direction of;  directly over/level with; to detriment of;'
+      },
+      {
+        stems: new StemKey('septem', 'septim', 'septen', 'sept'),
+        part: { pofs: PartOfSpeech.NUM, num: { decl: 2, var: 0, sort: 'X' } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
+        mean: ' 7 - (CARD answers \'how many\');'
       }
     ];
     
