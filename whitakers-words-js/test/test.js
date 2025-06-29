@@ -426,4 +426,38 @@ test('demonstrative pronoun hic output format', () => {
   assert(advDict.includes('[XXXCX]'), 'Adverb should have frequency code [XXXCX]');
 });
 
+test('superlative adjective acerrimus', () => {
+  const dict = new Dictionary();
+  dict.loadFromDictline('../DICTLINE.GEN');
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('acerrimus');
+  assert(results.length > 0, 'Should parse "acerrimus"');
+  
+  const result = results[0];
+  assert.equal(result.dictEntry.part.pofs, 'ADJ', 'Should be an adjective');
+  assert.equal(result.dictEntry.part.adj.decl, 3, 'Should be 3rd declension');
+  assert(result.dictEntry.mean.includes('sharp'), 'Should mean "sharp"');
+  
+  // Check inflection details
+  assert(result.inflection, 'Should have inflection');
+  assert.equal(result.inflection.qual.adj.comp, 'SUPER', 'Should be superlative');
+  assert.equal(result.inflection.qual.adj.cs, 'NOM', 'Should be nominative');
+  assert.equal(result.inflection.qual.adj.number, 'S', 'Should be singular');
+  assert.equal(result.inflection.qual.adj.gender, 'M', 'Should be masculine');
+  
+  // Test inflection line formatting
+  const inflectionLine = analyzer.formatInflectionLine(result);
+  assert(inflectionLine.startsWith('acerri.mus'), 'Should show acerri.mus stem');
+  assert(inflectionLine.includes('SUPER'), 'Should show SUPER in inflection line');
+  
+  // Test dictionary form formatting
+  const dictForm = analyzer.formatDictionaryForm(result);
+  assert(dictForm.includes('acer, acris -e'), 'Should show positive forms');
+  assert(dictForm.includes('acrior -or -us'), 'Should show comparative forms');
+  assert(dictForm.includes('acerrimus -a -um'), 'Should show superlative forms');
+  assert(dictForm.includes('[XXXAO]'), 'Should have frequency code [XXXAO]');
+});
+
 console.log('All tests completed!');

@@ -185,6 +185,22 @@ export class Dictionary {
     const indices = this.stemIndex.get(stem) || [];
     return indices.map(i => this.entries[i]);
   }
+  
+  findByPartialStem(partialStem) {
+    // Return all entries for partial stem matching (used for superlative checking)
+    partialStem = partialStem.toLowerCase().trim();
+    const results = [];
+    for (let i = 0; i < this.entries.length; i++) {
+      const entry = this.entries[i];
+      if (entry.stems.stem1.trim().startsWith(partialStem) ||
+          entry.stems.stem2.trim().startsWith(partialStem) ||
+          entry.stems.stem3.trim().startsWith(partialStem) ||
+          entry.stems.stem4.trim().startsWith(partialStem)) {
+        results.push(entry);
+      }
+    }
+    return results;
+  }
 
   findByEnglish(word) {
     word = word.trim().toLowerCase();

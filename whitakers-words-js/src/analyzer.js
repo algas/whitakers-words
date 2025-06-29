@@ -90,7 +90,22 @@ export class WordAnalyzer {
     for (const inflection of this.inflectionDb.inflections) {
       const stem = this.inflectionDb.removeEnding(word, inflection.ending);
       if (stem) {
-        const entries = this.dictionary.findByStem(stem);
+        // First try to find entries by the stem we extracted
+        let entries = this.dictionary.findByStem(stem);
+        
+        // Also check if this stem could match a different key in dictionary entries
+        // For superlatives (key 4), we need to check all entries and match against their 4th stem
+        if (inflection.key === 4) {
+          const allEntries = this.dictionary.findByPartialStem(stem);
+          for (const entry of allEntries) {
+            if (entry.stems.stem4 && entry.stems.stem4.trim() === stem) {
+              // Avoid duplicates
+              if (!entries.some(e => e === entry)) {
+                entries.push(entry);
+              }
+            }
+          }
+        }
         
         for (const entry of entries) {
           // Check if part of speech matches
@@ -101,6 +116,14 @@ export class WordAnalyzer {
             }
             // Further validation based on declension/conjugation
             if (this.validateInflection(entry, inflection)) {
+              // For inflections with specific stem keys, verify the stem matches
+              if (inflection.key && inflection.key > 0) {
+                const expectedStem = this.getDictionaryStem(entry.stems, inflection.key);
+                if (expectedStem.trim() !== stem) {
+                  continue;
+                }
+              }
+              
               // Create unique key to avoid duplicates
               const key = `${stem}-${entry.part.pofs}-${inflection.ending}-${JSON.stringify(inflection.qual)}`;
               if (!seen.has(key)) {
@@ -118,6 +141,16 @@ export class WordAnalyzer {
     }
     
     return results;
+  }
+  
+  getDictionaryStem(stems, key) {
+    switch(key) {
+      case 1: return stems.stem1 || '';
+      case 2: return stems.stem2 || '';
+      case 3: return stems.stem3 || '';
+      case 4: return stems.stem4 || '';
+      default: return stems.stem1 || '';
+    }
   }
 
   validateInflection(entry, inflection) {
@@ -141,7 +174,10 @@ export class WordAnalyzer {
     } else if (inflection.qual.pofs === PartOfSpeech.V && entry.part.pofs === PartOfSpeech.V) {
       return entry.part.v.con === inflection.qual.v.con;
     } else if (inflection.qual.pofs === PartOfSpeech.ADJ && entry.part.pofs === PartOfSpeech.ADJ) {
-      const declMatch = entry.part.adj.decl === inflection.qual.adj.decl;
+      // Declension 0 is universal and matches any declension
+      const inflDecl = inflection.qual.adj.decl || 0;
+      const declMatch = inflDecl === 0 || entry.part.adj.decl === inflDecl;
+      
       const entryVar = entry.part.adj.var || 1;
       const inflVar = inflection.qual.adj.var !== undefined ? inflection.qual.adj.var : 1;
       // Variant 0 is universal and matches any variant
@@ -207,7 +243,10 @@ export class WordAnalyzer {
     
     // Show the stem with ending for inflected words, just stem for indeclinable
     if (inflection && inflection.ending) {
-      output += `${stems.stem1.trim()}.${inflection.ending}`;
+      // Use the appropriate stem based on the inflection key
+      const stemKey = inflection.key || 1;
+      const stem = this.getDictionaryStem(stems, stemKey).trim();
+      output += `${stem}.${inflection.ending}`;
     } else {
       output += stems.stem1.trim();
     }
@@ -335,10 +374,13 @@ export class WordAnalyzer {
       if (entry.part.adj.decl === 1 || entry.part.adj.decl === 2) {
         output += `${stems.stem1.trim()}us, ${stems.stem1.trim()}a -um, melior -or -us, optimus -a -um`;
       } else if (entry.part.adj.decl === 3) {
-        // 3rd declension adjectives like facilis, facile
+        // 3rd declension adjectives
         const base = stems.stem1.trim();
         if (base === 'facil') {
           output += `${base}is, ${base}e, facilior -or -us, facillimus -a -um`;
+        } else if (base === 'acer' && stems.stem3.trim() && stems.stem4.trim()) {
+          // Special case for acer with all principal parts
+          output += `acer, ${stems.stem2.trim()}is -e, ${stems.stem2.trim()}ior -or -us, acerrimus -a -um`;
         } else {
           output += `${base}is, ${base}e`;
         }

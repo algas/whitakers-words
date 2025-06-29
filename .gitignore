@@ -1,7 +1,7 @@
 *~
 auto.cgpr
 obj/
-bin/
+/bin/
 lib/
 _site/
 WORD.MOD
