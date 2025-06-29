@@ -364,6 +364,32 @@ export class InflectionDatabase {
     this.addAdjectiveInflection(1, 'ae', Case.GEN, Number.S, Gender.F, Comparison.POS);
     this.addAdjectiveInflection(1, 'i', Case.GEN, Number.S, Gender.N, Comparison.POS);
 
+    // 3rd declension adjectives (like facilis, facile)
+    this.addAdjectiveInflection(3, 'is', Case.NOM, Number.S, Gender.M, Comparison.POS);
+    this.addAdjectiveInflection(3, 'is', Case.NOM, Number.S, Gender.F, Comparison.POS);
+    this.addAdjectiveInflection(3, 'e', Case.NOM, Number.S, Gender.N, Comparison.POS);
+    this.addAdjectiveInflection(3, 'is', Case.VOC, Number.S, Gender.M, Comparison.POS);
+    this.addAdjectiveInflection(3, 'is', Case.VOC, Number.S, Gender.F, Comparison.POS);
+    this.addAdjectiveInflection(3, 'e', Case.VOC, Number.S, Gender.N, Comparison.POS);
+    this.addAdjectiveInflection(3, 'em', Case.ACC, Number.S, Gender.M, Comparison.POS);
+    this.addAdjectiveInflection(3, 'em', Case.ACC, Number.S, Gender.F, Comparison.POS);
+    this.addAdjectiveInflection(3, 'e', Case.ACC, Number.S, Gender.N, Comparison.POS);
+    this.addAdjectiveInflection(3, 'is', Case.GEN, Number.S, Gender.M, Comparison.POS);
+    this.addAdjectiveInflection(3, 'is', Case.GEN, Number.S, Gender.F, Comparison.POS);
+    this.addAdjectiveInflection(3, 'is', Case.GEN, Number.S, Gender.N, Comparison.POS);
+    this.addAdjectiveInflection(3, 'i', Case.DAT, Number.S, Gender.M, Comparison.POS);
+    this.addAdjectiveInflection(3, 'i', Case.DAT, Number.S, Gender.F, Comparison.POS);
+    this.addAdjectiveInflection(3, 'i', Case.DAT, Number.S, Gender.N, Comparison.POS);
+    this.addAdjectiveInflection(3, 'i', Case.ABL, Number.S, Gender.M, Comparison.POS);
+    this.addAdjectiveInflection(3, 'i', Case.ABL, Number.S, Gender.F, Comparison.POS);
+    this.addAdjectiveInflection(3, 'e', Case.ABL, Number.S, Gender.X, Comparison.POS); // For mixed gender ablative (includes N)
+    
+    // Add universal 3rd declension forms (variant 0 - matches any variant)
+    this.addAdjectiveInflectionVariant0(3, 'e', Case.NOM, Number.S, Gender.N, Comparison.POS);
+    this.addAdjectiveInflectionVariant0(3, 'e', Case.VOC, Number.S, Gender.N, Comparison.POS);
+    this.addAdjectiveInflectionVariant0(3, 'e', Case.ACC, Number.S, Gender.N, Comparison.POS);
+    this.addAdjectiveInflectionVariant0(3, 'e', Case.ABL, Number.S, Gender.X, Comparison.POS);
+
     // Comparative
     this.addAdjectiveInflection(3, 'ior', Case.NOM, Number.S, Gender.C, Comparison.COMP);
     this.addAdjectiveInflection(3, 'ius', Case.NOM, Number.S, Gender.N, Comparison.COMP);
@@ -432,6 +458,17 @@ export class InflectionDatabase {
       qual: {
         pofs: PartOfSpeech.PRON,
         pron: { decl, cs, number, gender }
+      },
+      ending,
+      key: 1
+    });
+  }
+
+  addAdjectiveInflectionVariant0(decl, ending, cs, number, gender, comp) {
+    this.inflections.push({
+      qual: {
+        pofs: PartOfSpeech.ADJ,
+        adj: { decl, var: 0, cs, number, gender, comp }
       },
       ending,
       key: 1

@@ -194,4 +194,42 @@ test('Demonstrative pronoun - illud', () => {
   assert(nomResult.dictEntry.mean.includes('that'), 'Should mean "that"');
 });
 
+test('3rd declension adjective and adverb - facile', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase();
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('facile');
+  assert(results.length > 0, 'Should parse "facile"');
+  
+  // Should find both adjective and adverb entries
+  const adjResults = results.filter(r => r.dictEntry.part.pofs === 'ADJ');
+  const advResults = results.filter(r => r.dictEntry.part.pofs === 'ADV');
+  
+  assert(adjResults.length > 0, 'Should find adjective results');
+  assert(advResults.length > 0, 'Should find adverb result');
+  
+  // Check adjective
+  const adjResult = adjResults[0];
+  assert.equal(adjResult.dictEntry.part.adj.decl, 3, 'Should be 3rd declension adjective');
+  assert(adjResult.dictEntry.mean.includes('easy'), 'Should mean "easy"');
+  
+  // Should find neuter forms (NOM, VOC, ACC)
+  const nomResult = adjResults.find(r => 
+    r.inflection && r.inflection.qual.adj.cs === 'NOM' && r.inflection.qual.adj.gender === 'N');
+  const vocResult = adjResults.find(r => 
+    r.inflection && r.inflection.qual.adj.cs === 'VOC' && r.inflection.qual.adj.gender === 'N');
+  const accResult = adjResults.find(r => 
+    r.inflection && r.inflection.qual.adj.cs === 'ACC' && r.inflection.qual.adj.gender === 'N');
+  
+  assert(nomResult, 'Should find nominative neuter result');
+  assert(vocResult, 'Should find vocative neuter result');
+  assert(accResult, 'Should find accusative neuter result');
+  
+  // Check adverb
+  const advResult = advResults[0];
+  assert.equal(advResult.dictEntry.part.pofs, 'ADV', 'Should be an adverb');
+  assert(advResult.dictEntry.mean.includes('easily'), 'Should mean "easily"');
+});
+
 console.log('All tests completed!');

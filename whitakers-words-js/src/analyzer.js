@@ -95,6 +95,10 @@ export class WordAnalyzer {
         for (const entry of entries) {
           // Check if part of speech matches
           if (entry.part.pofs === inflection.qual.pofs) {
+            // Skip adverbs for inflection matching (they are handled as exact matches)
+            if (entry.part.pofs === PartOfSpeech.ADV) {
+              continue;
+            }
             // Further validation based on declension/conjugation
             if (this.validateInflection(entry, inflection)) {
               // Create unique key to avoid duplicates
@@ -129,7 +133,12 @@ export class WordAnalyzer {
     } else if (inflection.qual.pofs === PartOfSpeech.V && entry.part.pofs === PartOfSpeech.V) {
       return entry.part.v.con === inflection.qual.v.con;
     } else if (inflection.qual.pofs === PartOfSpeech.ADJ && entry.part.pofs === PartOfSpeech.ADJ) {
-      return entry.part.adj.decl === inflection.qual.adj.decl;
+      const declMatch = entry.part.adj.decl === inflection.qual.adj.decl;
+      const entryVar = entry.part.adj.var || 1;
+      const inflVar = inflection.qual.adj.var !== undefined ? inflection.qual.adj.var : 1;
+      // Variant 0 is universal and matches any variant
+      const varMatch = inflVar === 0 || entryVar === inflVar;
+      return declMatch && varMatch;
     } else if (inflection.qual.pofs === PartOfSpeech.PRON && entry.part.pofs === PartOfSpeech.PRON) {
       return entry.part.pron.decl === inflection.qual.pron.decl;
     }
@@ -228,10 +237,12 @@ export class WordAnalyzer {
         output += `${pron.cs} ${pron.number} ${pron.gender || ''}`.padEnd(25, ' ');
       }
     } else {
-      // For non-inflected words like prepositions
+      // For non-inflected words like prepositions and adverbs
       if (parseRecord.dictEntry.part.pofs === PartOfSpeech.PREP) {
         const obj = parseRecord.dictEntry.part.prep?.obj || '';
         output += `${obj}`.padEnd(25, ' ');
+      } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.ADV) {
+        output += 'POS'.padEnd(25, ' ');
       }
     }
     
@@ -308,6 +319,14 @@ export class WordAnalyzer {
       // Adjective: show forms with comparative and superlative
       if (entry.part.adj.decl === 1 || entry.part.adj.decl === 2) {
         output += `${stems.stem1.trim()}us, ${stems.stem1.trim()}a -um, melior -or -us, optimus -a -um`;
+      } else if (entry.part.adj.decl === 3) {
+        // 3rd declension adjectives like facilis, facile
+        const base = stems.stem1.trim();
+        if (base === 'facil') {
+          output += `${base}is, ${base}e, facilior -or -us, facillimus -a -um`;
+        } else {
+          output += `${base}is, ${base}e`;
+        }
       } else {
         output += stems.stem1.trim();
         if (stems.stem2.trim()) {
@@ -327,6 +346,14 @@ export class WordAnalyzer {
     } else if (entry.part.pofs === PartOfSpeech.PREP) {
       // Preposition: show with case
       output += `${stems.stem1.trim()}  ${entry.part.pofs}  ${entry.part.prep?.obj || ''}`;
+    } else if (entry.part.pofs === PartOfSpeech.ADV) {
+      // Adverb: show positive, comparative, superlative forms
+      const base = stems.stem1.trim();
+      if (base === 'facile') {
+        output += `${base}, facilius, facillime  ${entry.part.pofs}`;
+      } else {
+        output += `${base}  ${entry.part.pofs}`;
+      }
     } else {
       // Other parts of speech
       output += `${stems.stem1.trim()}  ${entry.part.pofs}`;

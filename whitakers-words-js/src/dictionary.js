@@ -265,6 +265,18 @@ export class Dictionary {
         part: { pofs: PartOfSpeech.PRON, pron: { decl: 6, var: 1 } },
         tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
         mean: 'that; those (pl.); also DEMONST; that person/thing; the well known; the former;'
+      },
+      {
+        stems: new StemKey('facil', 'facil'),
+        part: { pofs: PartOfSpeech.ADJ, adj: { decl: 3, var: 2 } },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
+        mean: 'easy, easy to do, without difficulty, ready, quick, good natured, courteous;'
+      },
+      {
+        stems: new StemKey('facile'),
+        part: { pofs: PartOfSpeech.ADV, adv: {} },
+        tran: { age: 'X', area: 'X', geo: 'X', freq: 'B', source: 'O' },
+        mean: 'easily, readily, without difficulty; generally, often; willingly; heedlessly;'
       }
     ];
     
