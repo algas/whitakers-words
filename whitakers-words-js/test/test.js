@@ -460,4 +460,92 @@ test('superlative adjective acerrimus', () => {
   assert(dictForm.includes('[XXXAO]'), 'Should have frequency code [XXXAO]');
 });
 
+test('superlative adverb optime', () => {
+  const dict = new Dictionary();
+  dict.loadFromDictline('../DICTLINE.GEN');
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('optime');
+  assert(results.length >= 2, 'Should find both adverb and adjective forms');
+  
+  // Find adverb and adjective results
+  const advResult = results.find(r => r.dictEntry.part.pofs === 'ADV');
+  const adjResult = results.find(r => r.dictEntry.part.pofs === 'ADJ');
+  
+  assert(advResult, 'Should find adverb result');
+  assert(adjResult, 'Should find adjective result');
+  
+  // Check adverb details
+  assert(advResult.dictEntry.mean.includes('well'), 'Adverb should mean "well"');
+  assert(advResult.inflection, 'Adverb should have inflection info');
+  assert.equal(advResult.inflection.qual.adv.comp, 'SUPER', 'Should be superlative');
+  
+  // Check adjective details
+  assert.equal(adjResult.dictEntry.part.adj.decl, 1, 'Should be 1st declension adjective');
+  assert(adjResult.dictEntry.mean.includes('good'), 'Adjective should mean "good"');
+  assert.equal(adjResult.inflection.qual.adj.comp, 'SUPER', 'Should be superlative');
+  assert.equal(adjResult.inflection.qual.adj.cs, 'VOC', 'Should be vocative');
+  assert.equal(adjResult.inflection.qual.adj.gender, 'M', 'Should be masculine');
+  
+  // Test inflection line formatting
+  const advLine = analyzer.formatInflectionLine(advResult);
+  assert(advLine.startsWith('optime'), 'Should show optime for adverb');
+  assert(advLine.includes('SUPER'), 'Should show SUPER for adverb');
+  
+  const adjLine = analyzer.formatInflectionLine(adjResult);
+  assert(adjLine.startsWith('opti.me'), 'Should show opti.me for adjective');
+  assert(adjLine.includes('SUPER'), 'Should show SUPER for adjective');
+  
+  // Test dictionary form formatting
+  const advDict = analyzer.formatDictionaryForm(advResult);
+  assert(advDict.includes('bene, melius, optime'), 'Should show full adverb paradigm');
+  assert(advDict.includes('[XXXAO]'), 'Should have frequency code [XXXAO]');
+  
+  const adjDict = analyzer.formatDictionaryForm(adjResult);
+  assert(adjDict.includes('bonus, bona -um'), 'Should show positive adjective forms');
+  assert(adjDict.includes('optimus -a -um'), 'Should show superlative adjective forms');
+});
+
+test('pluperfect subjunctive monuissemus', () => {
+  const dict = new Dictionary();
+  dict.loadFromDictline('../DICTLINE.GEN');
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  const results = analyzer.analyze('monuissemus');
+  assert(results.length > 0, 'Should parse "monuissemus"');
+  
+  const result = results[0];
+  assert.equal(result.dictEntry.part.pofs, 'V', 'Should be a verb');
+  assert.equal(result.dictEntry.part.v.con, 2, 'Should be 2nd conjugation');
+  assert(result.dictEntry.mean.includes('remind'), 'Should mean "remind"');
+  
+  // Check inflection details
+  assert(result.inflection, 'Should have inflection');
+  assert.equal(result.inflection.qual.v.tense, 'PLUP', 'Should be pluperfect');
+  assert.equal(result.inflection.qual.v.voice, 'ACTIVE', 'Should be active voice');
+  assert.equal(result.inflection.qual.v.mood, 'SUB', 'Should be subjunctive');
+  assert.equal(result.inflection.qual.v.person, 1, 'Should be 1st person');
+  assert.equal(result.inflection.qual.v.number, 'P', 'Should be plural');
+  
+  // Check that it uses stem key 3 (perfect stem)
+  assert.equal(result.inflection.key, 3, 'Should use perfect stem (key 3)');
+  
+  // Test inflection line formatting
+  const inflectionLine = analyzer.formatInflectionLine(result);
+  assert(inflectionLine.startsWith('monu.issemus'), 'Should show monu.issemus stem');
+  assert(inflectionLine.includes('PLUP'), 'Should show PLUP in inflection line');
+  assert(inflectionLine.includes('ACTIVE'), 'Should show ACTIVE in inflection line');
+  assert(inflectionLine.includes('SUB'), 'Should show SUB in inflection line');
+  assert(inflectionLine.includes('1 P'), 'Should show 1 P in inflection line');
+  
+  // Test dictionary form formatting
+  const dictForm = analyzer.formatDictionaryForm(result);
+  assert(dictForm.includes('moneo, monere'), 'Should show principal parts starting with moneo, monere');
+  assert(dictForm.includes('monui, monitus'), 'Should show perfect and passive principal parts');
+  assert(dictForm.includes('V (2nd)'), 'Should indicate 2nd conjugation');
+  assert(dictForm.includes('[XXXAX]'), 'Should have frequency code [XXXAX]');
+});
+
 console.log('All tests completed!');

@@ -58,6 +58,13 @@ export class WordAnalyzer {
       if ([PartOfSpeech.CONJ, PartOfSpeech.PREP, PartOfSpeech.ADV, PartOfSpeech.INTERJ]
           .includes(entry.part.pofs) ||
           (entry.part.pofs === PartOfSpeech.PRON && entry.part.pron.decl === 5)) {
+        // Skip adverbs that have comparative/superlative forms when looking up the base form
+        if (entry.part.pofs === PartOfSpeech.ADV && 
+            (entry.stems.stem2.trim() || entry.stems.stem3.trim())) {
+          // This adverb has comparison forms, so skip the exact match for the base form
+          continue;
+        }
+        
         const parse = new ParseRecord();
         parse.stem = entry.stems;
         parse.dictEntry = entry;
@@ -79,6 +86,37 @@ export class WordAnalyzer {
       }
     }
     
+    // Also check for adverb comparative/superlative forms
+    for (const entry of this.dictionary.entries) {
+      if (entry.part.pofs === PartOfSpeech.ADV) {
+        // Check if word matches comparative (stem2) or superlative (stem3)
+        if (entry.stems.stem2.trim() === word || entry.stems.stem3.trim() === word) {
+          const parse = new ParseRecord();
+          parse.stem = entry.stems;
+          parse.dictEntry = entry;
+          
+          // Determine comparison degree
+          let comp = 'POS';
+          if (entry.stems.stem2.trim() === word) {
+            comp = 'COMP';
+          } else if (entry.stems.stem3.trim() === word) {
+            comp = 'SUPER';
+          }
+          
+          // Create inflection info for adverbs
+          parse.inflection = {
+            qual: {
+              pofs: PartOfSpeech.ADV,
+              adv: { comp }
+            },
+            ending: ''
+          };
+          
+          results.push(parse);
+        }
+      }
+    }
+    
     return results;
   }
 
@@ -94,11 +132,18 @@ export class WordAnalyzer {
         let entries = this.dictionary.findByStem(stem);
         
         // Also check if this stem could match a different key in dictionary entries
-        // For superlatives (key 4), we need to check all entries and match against their 4th stem
-        if (inflection.key === 4) {
+        // For perfect stems (key 3) and superlatives (key 4)
+        if (inflection.key === 3 || inflection.key === 4) {
           const allEntries = this.dictionary.findByPartialStem(stem);
           for (const entry of allEntries) {
-            if (entry.stems.stem4 && entry.stems.stem4.trim() === stem) {
+            let stemMatches = false;
+            if (inflection.key === 3 && entry.stems.stem3 && entry.stems.stem3.trim() === stem) {
+              stemMatches = true;
+            } else if (inflection.key === 4 && entry.stems.stem4 && entry.stems.stem4.trim() === stem) {
+              stemMatches = true;
+            }
+            
+            if (stemMatches) {
               // Avoid duplicates
               if (!entries.some(e => e === entry)) {
                 entries.push(entry);
@@ -172,7 +217,16 @@ export class WordAnalyzer {
       
       return declMatch && varMatch && genderMatch;
     } else if (inflection.qual.pofs === PartOfSpeech.V && entry.part.pofs === PartOfSpeech.V) {
-      return entry.part.v.con === inflection.qual.v.con;
+      // Conjugation 0 is universal and matches any conjugation
+      const inflCon = inflection.qual.v.con || 0;
+      const conMatch = inflCon === 0 || entry.part.v.con === inflCon;
+      
+      // Variant 0 is universal and matches any variant
+      const entryVar = entry.part.v.var || 1;
+      const inflVar = inflection.qual.v.var !== undefined ? inflection.qual.v.var : 1;
+      const varMatch = inflVar === 0 || entryVar === inflVar;
+      
+      return conMatch && varMatch;
     } else if (inflection.qual.pofs === PartOfSpeech.ADJ && entry.part.pofs === PartOfSpeech.ADJ) {
       // Declension 0 is universal and matches any declension
       const inflDecl = inflection.qual.adj.decl || 0;
@@ -248,7 +302,19 @@ export class WordAnalyzer {
       const stem = this.getDictionaryStem(stems, stemKey).trim();
       output += `${stem}.${inflection.ending}`;
     } else {
-      output += stems.stem1.trim();
+      // For adverbs with comparison degree, show the appropriate form
+      if (parseRecord.dictEntry.part.pofs === PartOfSpeech.ADV && 
+          inflection && inflection.qual && inflection.qual.adv && inflection.qual.adv.comp) {
+        if (inflection.qual.adv.comp === 'COMP' && stems.stem2.trim()) {
+          output += stems.stem2.trim();
+        } else if (inflection.qual.adv.comp === 'SUPER' && stems.stem3.trim()) {
+          output += stems.stem3.trim();
+        } else {
+          output += stems.stem1.trim();
+        }
+      } else {
+        output += stems.stem1.trim();
+      }
     }
     
     // Pad to column 21
@@ -284,6 +350,9 @@ export class WordAnalyzer {
       } else if (inflection.qual.pofs === PartOfSpeech.PRON) {
         const pron = inflection.qual.pron;
         output += `${pron.cs} ${pron.number} ${pron.gender || ''}`.padEnd(25, ' ');
+      } else if (inflection.qual.pofs === PartOfSpeech.ADV) {
+        const adv = inflection.qual.adv;
+        output += `${adv.comp || 'POS'}`.padEnd(25, ' ');
       }
     } else {
       // For non-inflected words like prepositions and adverbs
@@ -291,7 +360,12 @@ export class WordAnalyzer {
         const obj = parseRecord.dictEntry.part.prep?.obj || '';
         output += `${obj}`.padEnd(25, ' ');
       } else if (parseRecord.dictEntry.part.pofs === PartOfSpeech.ADV) {
-        output += 'POS'.padEnd(25, ' ');
+        // Check if inflection has comparison degree info
+        if (inflection && inflection.qual && inflection.qual.adv && inflection.qual.adv.comp) {
+          output += inflection.qual.adv.comp.padEnd(25, ' ');
+        } else {
+          output += 'POS'.padEnd(25, ' ');
+        }
       }
     }
     
@@ -319,8 +393,25 @@ export class WordAnalyzer {
     let output = '';
     
     if (entry.part.pofs === PartOfSpeech.V) {
-      // Verb: show principal parts (amo, amare, amavi, amatus)
-      output += `${stems.stem1.trim()}o, ${stems.stem1.trim()}are`;
+      // Verb: show principal parts based on conjugation
+      const conj = entry.part.v.con;
+      if (conj === 1) {
+        // 1st conjugation: amo, amare, amavi, amatus
+        output += `${stems.stem1.trim()}o, ${stems.stem1.trim()}are`;
+      } else if (conj === 2) {
+        // 2nd conjugation: moneo, monere, monui, monitus
+        output += `${stems.stem1.trim()}eo, ${stems.stem2.trim()}ere`;
+      } else if (conj === 3) {
+        // 3rd conjugation: rego, regere, rexi, rectus
+        output += `${stems.stem1.trim()}o, ${stems.stem2.trim()}ere`;
+      } else if (conj === 4) {
+        // 4th conjugation: audio, audire, audivi, auditus
+        output += `${stems.stem1.trim()}io, ${stems.stem1.trim()}ire`;
+      } else {
+        // Default fallback
+        output += `${stems.stem1.trim()}o, ${stems.stem2.trim()}ere`;
+      }
+      
       if (stems.stem3.trim()) {
         output += `, ${stems.stem3.trim()}i`;
       }
@@ -409,8 +500,14 @@ export class WordAnalyzer {
     } else if (entry.part.pofs === PartOfSpeech.ADV) {
       // Adverb: show positive, comparative, superlative forms
       const base = stems.stem1.trim();
+      const comp = stems.stem2.trim();
+      const sup = stems.stem3.trim();
+      
       if (base === 'facile') {
         output += `${base}, facilius, facillime  ${entry.part.pofs}`;
+      } else if (comp && sup) {
+        // Has comparative and superlative forms
+        output += `${base}, ${comp}, ${sup}  ${entry.part.pofs}`;
       } else {
         output += `${base}  ${entry.part.pofs}`;
       }

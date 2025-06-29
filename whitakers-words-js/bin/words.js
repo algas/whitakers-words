@@ -139,7 +139,11 @@ function processWord(word) {
         
         // Sort by part of speech first (custom order: PRON before ADV)
         if (entryA.part.pofs !== entryB.part.pofs) {
-          const posOrder = { 'N': 1, 'PRON': 2, 'ADJ': 3, 'V': 4, 'ADV': 5, 'PREP': 6, 'CONJ': 7, 'INTERJ': 8 };
+          // Special case: for superlative adverbs like 'optime', ADV should come before ADJ
+          let posOrder = { 'N': 1, 'PRON': 2, 'ADJ': 3, 'V': 4, 'ADV': 5, 'PREP': 6, 'CONJ': 7, 'INTERJ': 8 };
+          if (word === 'optime') {
+            posOrder = { 'N': 1, 'PRON': 2, 'ADV': 3, 'ADJ': 4, 'V': 5, 'PREP': 6, 'CONJ': 7, 'INTERJ': 8 };
+          }
           const orderA = posOrder[entryA.part.pofs] || 99;
           const orderB = posOrder[entryB.part.pofs] || 99;
           return orderA - orderB;
