@@ -101,9 +101,14 @@ export class WordAnalyzer {
     const inflectionMatches = this.findInflectionMatches(word);
     results.push(...inflectionMatches);
     
-    // Try tricks (special cases) - but skip enclitics since we handled them above
-    const trickMatches = this.applyPrefixTricks(word);
-    results.push(...trickMatches);
+    // Only try prefix tricks if we don't have good direct matches
+    // This prevents "inter" from showing "ter" results when "inter" itself exists
+    const hasGoodMatches = exactMatches.length > 0 || inflectionMatches.length > 0;
+    
+    if (!hasGoodMatches) {
+      const trickMatches = this.applyPrefixTricks(word);
+      results.push(...trickMatches);
+    }
     
     return results;
   }

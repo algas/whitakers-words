@@ -419,6 +419,45 @@ test('No enclitic for short words', () => {
   assert(!hasTackon3, 'Standalone "ne" should not be analyzed as enclitic');
 });
 
+test('Prefix tricks only when no direct matches', () => {
+  const dict = Dictionary.createSampleDictionary();
+  const inflDb = new InflectionDatabase('../INFLECTS.LAT');
+  const analyzer = new WordAnalyzer(dict, inflDb);
+  
+  // Add "inter" to sample dictionary for testing
+  const interEntry = {
+    stems: { stem1: 'inter', stem2: '', stem3: '', stem4: '' },
+    part: { pofs: 'PREP', prep: { obj: 'ACC' } },
+    tran: { age: 'X', area: 'X', geo: 'X', freq: 'A', source: 'X' },
+    mean: 'between, among; during;'
+  };
+  dict.entries.push(interEntry);
+  dict.indexStem('inter', dict.entries.length - 1);
+  
+  // Test that "inter" only returns direct matches, not prefix decomposition
+  const results = analyzer.analyze('inter');
+  
+  // Should have matches for "inter" itself
+  const hasInterPrep = results.some(r => 
+    r.dictEntry.part.pofs === 'PREP' && 
+    r.dictEntry.stems.stem1.trim() === 'inter'
+  );
+  assert(hasInterPrep, 'Should find "inter" as preposition');
+  
+  // Should NOT have matches from prefix decomposition (like "in" + "ter")
+  const hasShortWords = results.some(r => 
+    r.dictEntry.stems.stem1.trim().length < 4 // Words shorter than "inter"
+  );
+  assert(!hasShortWords, 'Should not find short words from prefix decomposition when direct matches exist');
+  
+  // All results should be related to "inter" or its inflections
+  results.forEach(result => {
+    const stem = result.dictEntry.stems.stem1.trim();
+    const isInterRelated = stem === 'inter' || stem.startsWith('inter');
+    assert(isInterRelated, `All results should be inter-related, but found: ${stem}`);
+  });
+});
+
 test('Macron handling', () => {
   const dict = Dictionary.createSampleDictionary();
   const inflDb = new InflectionDatabase('../INFLECTS.LAT');
